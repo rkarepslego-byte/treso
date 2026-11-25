@@ -42,6 +42,13 @@ plusieurs lignes), puis cliquer **Valider les saisies du tableau** : l'outil att
 identifiants et complète les valeurs par défaut. Le tableau garde toujours 30 lignes vides : pour
 coller davantage de lignes, collez-en 30, validez, puis recommencez.
 
+**Reprendre un fichier existant** (ancien prévisionnel, liste de factures…) : bouton **Importer des
+prévisions…**, choisir le fichier (Excel ou CSV), puis la banque par défaut. L'outil reconnaît les
+colonnes d'après leurs titres (Date / Échéance, Libellé / Intitulé, Montant ou Débit / Crédit ou
+Dépenses / Recettes, Banque, Catégorie / Rubrique, Type, Commentaire), affiche un récapitulatif et
+demande confirmation. Les lignes déjà présentes, sans montant ou antérieures au solde initial sont
+ignorées : l'import peut être relancé sans créer de doublon.
+
 Autres boutons :
 * **Trier par date** ;
 * **Supprimer la ligne sélectionnée** (une échéance de charge fixe est marquée « Annulé » au lieu

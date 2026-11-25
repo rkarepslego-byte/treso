@@ -234,8 +234,10 @@ VBA, puis `Admin_ProtegerFeuilles`).
    relevé** (les opérations jusqu'à cette date incluse ne seront pas importées), catégories.
 4. Adapter `tbl_ParamImport` aux exports réels (§ 3.4), déposer un premier relevé, actualiser,
    contrôler le solde réel affiché par rapport au relevé bancaire.
-5. Saisir les charges fixes et les prévisions (ou les coller depuis l'ancien fichier dans les lignes
-   libres de l'onglet Saisie, puis « Valider les saisies du tableau »).
+5. Saisir les charges fixes et les prévisions, ou reprendre l'ancien fichier avec le bouton
+   **Importer des prévisions…** (onglet Saisie, macro `ImporterPrevisions` : détection des colonnes par
+   mots-clés, récapitulatif avant import, doublons ignorés ; miroir testé :
+   `reference/moteur.py:importer_previsions`).
 
 ## 3.9 Génération du classeur et tests (poste de développement)
 

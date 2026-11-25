@@ -484,6 +484,7 @@ class Generateur:
         self.bouton(ws, "I8", "Supprimer la ligne sélectionnée", "SupprimerLigne", 200, 28, ROUGE, dx=40)
         self.bouton(ws, "K8", "Annuler le rapprochement", "AnnulerRapprochement", 180, 28, AMBRE, dx=30)
         self.bouton(ws, "M8", "◄ Tableau de bord", "AllerTableauDeBord", 160, 28, BLEU_NUIT, dx=20)
+        self.bouton(ws, "O8", "Importer des prévisions…", "ImporterPrevisions", 190, 28, BLEU, dx=20)
         ws.set_row(7, 26)
         t = S.PREVISIONS
         r0, c0, n = self.ecrire_table(ws, t, self.lignes_previsions(), t.lignes_libres)

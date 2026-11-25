@@ -572,3 +572,225 @@ Public Sub GenererEcheancesInterne(Optional ByRef nbCreees As Long, Optional ByR
     Next r
     ReecrireAvecLignesLibres loP, total, nTotal, ColonnesTestPrev(cP)
 End Sub
+
+'-------------------------------------------------------------------------------
+' Import de prévisions depuis un autre classeur (reprise de l'existant)
+' Miroir de reference/moteur.py : detecter_colonnes_previsions / importer_previsions
+'-------------------------------------------------------------------------------
+Private Function MotsRole(ByVal role As String) As String
+    Select Case role
+        Case "date": MotsRole = "|DATE|ECHEANCE|"
+        Case "debit": MotsRole = "|DEBIT|DEPENSE|DEPENSES|SORTIE|SORTIES|DECAISSEMENT|DECAISSEMENTS|"
+        Case "credit": MotsRole = "|CREDIT|RECETTE|RECETTES|ENTREE|ENTREES|ENCAISSEMENT|ENCAISSEMENTS|"
+        Case "montant": MotsRole = "|MONTANT|SOMME|VALEUR|"
+        Case "banque": MotsRole = "|BANQUE|COMPTE|"
+        Case "categorie": MotsRole = "|CATEGORIE|RUBRIQUE|POSTE|NATURE|"
+        Case "type": MotsRole = "|TYPE|SENS|"
+        Case "commentaire": MotsRole = "|COMMENTAIRE|COMMENTAIRES|NOTE|NOTES|REMARQUE|REMARQUES|OBSERVATION|"
+        Case "libelle": MotsRole = "|LIBELLE|DESIGNATION|DESCRIPTION|INTITULE|OPERATION|OBJET|TIERS|"
+        Case Else: MotsRole = ""
+    End Select
+End Function
+
+' Attribue à chaque rôle la première colonne non encore prise dont l'en-tête contient un mot-clé
+Private Sub DetecterColonnesPrev(data As Variant, ByVal r As Long, ByVal nbCol As Long, roles As Object)
+    Dim ordre As Variant, k As Long, j As Long, w As Long, n As String, mots() As String
+    Dim pris As Object, trouve As Boolean
+    ordre = Array("date", "debit", "credit", "montant", "banque", "categorie", "type", "commentaire", "libelle")
+    roles.RemoveAll
+    Set pris = CreateObject("Scripting.Dictionary")
+    For k = LBound(ordre) To UBound(ordre)
+        trouve = False
+        For j = 1 To nbCol
+            If Not pris.Exists(j) Then
+                n = NormaliserTexte(Texte(data(r, j)))
+                If n <> "" Then
+                    mots = Split(n, " ")
+                    For w = LBound(mots) To UBound(mots)
+                        If InStr(1, MotsRole(CStr(ordre(k))), "|" & mots(w) & "|", vbBinaryCompare) > 0 Then
+                            trouve = True
+                            Exit For
+                        End If
+                    Next w
+                End If
+                If trouve Then
+                    roles(CStr(ordre(k))) = j
+                    pris(j) = True
+                    Exit For
+                End If
+            End If
+        Next j
+    Next k
+End Sub
+
+Private Function Cellule(data As Variant, ByVal i As Long, roles As Object, ByVal role As String) As Variant
+    If roles.Exists(role) Then Cellule = data(i, roles(role)) Else Cellule = Empty
+End Function
+
+' Montant indépendant des paramètres régionaux : "1 234,56", "-1.234,56", "(12,00)", nombres
+Public Function MontantTexte(ByVal v As Variant) As Double
+    Dim s As String, k As Long, ch As String, chiffres As String, negatif As Boolean
+    If IsError(v) Or IsEmpty(v) Or IsNull(v) Then Exit Function
+    If VarType(v) <> vbString Then
+        If IsNumeric(v) Then MontantTexte = CDbl(v)
+        Exit Function
+    End If
+    s = Trim$(v)
+    negatif = (InStr(1, s, "-") > 0) Or (Left$(s, 1) = "(")
+    For k = 1 To Len(s)
+        ch = Mid$(s, k, 1)
+        If (ch >= "0" And ch <= "9") Or ch = "," Or ch = "." Then chiffres = chiffres & ch
+    Next k
+    chiffres = Replace(Replace(chiffres, ".", ""), ",", ".")
+    If chiffres = "" Or chiffres = "." Then Exit Function
+    MontantTexte = Val(chiffres)
+    If negatif Then MontantTexte = -MontantTexte
+End Function
+
+Public Sub ImporterPrevisions()
+    Dim fichier As Variant, wbSrc As Workbook, data As Variant, a() As Variant, nL As Long, nbColSrc As Long
+    Dim roles As Object, i0 As Long, i As Long, r As Long, j As Long, choix As String, banqueDefaut As String
+    Dim lo As ListObject, cP As Object, dP As Variant, nP As Long, mx As Long, existantes As Object
+    Dim ajouts() As Variant, nAjouts As Long, nbIgnorees As Long, nbDoublons As Long, nbAnterieures As Long
+    Dim d As Double, mt As Double, typ As String, lib As String, nomB As String, bTxt As String, cle As String
+    Dim colonnesLues As String, role As Variant, msgErr As String, code As Variant, nb As String
+
+    On Error GoTo Erreur
+    fichier = Application.GetOpenFilename("Classeurs et CSV (*.xlsx;*.xlsm;*.xls;*.csv),*.xlsx;*.xlsm;*.xls;*.csv", , _
+                                          "Fichier des prévisions à importer")
+    If VarType(fichier) = vbBoolean Then Exit Sub
+    choix = InputBox("Banque à utiliser lorsque le fichier ne l'indique pas :" & vbCrLf & _
+                     "1 = " & NomBanque("B1") & vbCrLf & "2 = " & NomBanque("B2"), "Import de prévisions", "1")
+    If choix = "" Then Exit Sub
+    If choix = "2" Then banqueDefaut = NomBanque("B2") Else banqueDefaut = NomBanque("B1")
+
+    Application.ScreenUpdating = False
+    Set wbSrc = Workbooks.Open(CStr(fichier), UpdateLinks:=0, ReadOnly:=True, Local:=True)
+    data = wbSrc.Worksheets(1).UsedRange.Value2
+    wbSrc.Close SaveChanges:=False
+    Set wbSrc = Nothing
+    If Not IsArray(data) Then
+        ReDim a(1 To 1, 1 To 1)
+        a(1, 1) = data
+        data = a
+    End If
+    nL = UBound(data, 1)
+    nbColSrc = UBound(data, 2)
+
+    Set roles = CreateObject("Scripting.Dictionary")
+    i0 = 0
+    For i = 1 To IIf(nL < 20, nL, 20)
+        DetecterColonnesPrev data, i, nbColSrc, roles
+        If roles.Exists("date") And (roles.Exists("montant") Or roles.Exists("debit") Or roles.Exists("credit")) Then
+            i0 = i
+            Exit For
+        End If
+    Next i
+    If i0 = 0 Then
+        Application.ScreenUpdating = True
+        Afficher "Ligne d'en-tête introuvable dans le premier onglet du fichier." & vbCrLf & _
+                 "Colonnes attendues : une date (Date, Échéance) et un montant (Montant, ou Débit / Crédit, " & _
+                 "ou Dépenses / Recettes) ; facultatives : Libellé, Banque, Catégorie, Type, Commentaire.", _
+                 vbExclamation, "Import de prévisions"
+        Exit Sub
+    End If
+    For Each role In roles.Keys
+        colonnesLues = colonnesLues & "   " & role & " <- « " & Texte(data(i0, roles(role))) & " »" & vbCrLf
+    Next role
+
+    Set lo = T(T_PREV)
+    Set cP = Colonnes(lo)
+    dP = LireTable(lo)
+    nP = NbLignes(dP)
+    mx = MaxNumero(dP, nP, C(cP, "ID"), "P-")
+    Set existantes = CreateObject("Scripting.Dictionary")
+    For r = 1 To nP
+        If Texte(dP(r, C(cP, "ID"))) <> "" Then
+            existantes(DateISO(DateVal(dP(r, C(cP, "Date prévue")))) & "|" & Texte(dP(r, C(cP, "Banque"))) & "|" & _
+                       Texte(dP(r, C(cP, "Libellé"))) & "|" & _
+                       CentsTexte(MontantSigne(Texte(dP(r, C(cP, "Type"))), Nombre(dP(r, C(cP, "Montant")))))) = True
+        End If
+    Next r
+
+    ReDim ajouts(1 To IIf(nL - i0 < 1, 1, nL - i0), 1 To lo.ListColumns.Count)
+    For i = i0 + 1 To nL
+        d = DateVal(Cellule(data, i, roles, "date"))
+        If roles.Exists("debit") Or roles.Exists("credit") Then
+            mt = Abs(MontantTexte(Cellule(data, i, roles, "credit"))) - Abs(MontantTexte(Cellule(data, i, roles, "debit")))
+        Else
+            mt = MontantTexte(Cellule(data, i, roles, "montant"))
+        End If
+        typ = NormaliserTexte(Texte(Cellule(data, i, roles, "type")))
+        If typ <> "" Then
+            If InStr(typ, "RECETTE") > 0 Or InStr(typ, "ENCAISS") > 0 Or typ = "C" Or typ = "CREDIT" Or typ = "ENTREE" Then
+                mt = Abs(mt)
+            ElseIf InStr(typ, "DEPENSE") > 0 Or InStr(typ, "DECAISS") > 0 Or typ = "D" Or typ = "DEBIT" Or typ = "SORTIE" Then
+                mt = -Abs(mt)
+            End If
+        End If
+        lib = Texte(Cellule(data, i, roles, "libelle"))
+        If lib = "" Then lib = Texte(Cellule(data, i, roles, "categorie"))
+        If d = 0 Or mt = 0 Or lib = "" Then
+            For j = 1 To nbColSrc
+                If Texte(data(i, j)) <> "" Then
+                    nbIgnorees = nbIgnorees + 1
+                    Exit For
+                End If
+            Next j
+        Else
+            nomB = banqueDefaut
+            bTxt = NormaliserTexte(Texte(Cellule(data, i, roles, "banque")))
+            If bTxt <> "" Then
+                For Each code In Array("B1", "B2")
+                    nb = NormaliserTexte(NomBanque(CStr(code)))
+                    If InStr(bTxt, nb) > 0 Or InStr(nb, bTxt) > 0 Or bTxt = code Then nomB = NomBanque(CStr(code))
+                Next code
+            End If
+            mt = Round(mt, 2)
+            cle = DateISO(d) & "|" & nomB & "|" & lib & "|" & CentsTexte(mt)
+            If d <= DateSoldeBanque(nomB) Then
+                nbAnterieures = nbAnterieures + 1
+            ElseIf existantes.Exists(cle) Then
+                nbDoublons = nbDoublons + 1
+            Else
+                existantes(cle) = True
+                nAjouts = nAjouts + 1
+                mx = mx + 1
+                ajouts(nAjouts, C(cP, "ID")) = FormatId("P-", mx, 6)
+                ajouts(nAjouts, C(cP, "Date prévue")) = d
+                ajouts(nAjouts, C(cP, "Banque")) = nomB
+                ajouts(nAjouts, C(cP, "Libellé")) = lib
+                ajouts(nAjouts, C(cP, "Catégorie")) = Texte(Cellule(data, i, roles, "categorie"))
+                If mt > 0 Then ajouts(nAjouts, C(cP, "Type")) = TY_RECETTE Else ajouts(nAjouts, C(cP, "Type")) = TY_DEPENSE
+                ajouts(nAjouts, C(cP, "Montant")) = Abs(mt)
+                ajouts(nAjouts, C(cP, "Commentaire")) = Texte(Cellule(data, i, roles, "commentaire"))
+                ajouts(nAjouts, C(cP, "Statut")) = P_PREVU
+                ajouts(nAjouts, C(cP, "Origine")) = "Import"
+            End If
+        End If
+    Next i
+    Application.ScreenUpdating = True
+
+    If Afficher("Colonnes reconnues :" & vbCrLf & colonnesLues & vbCrLf & _
+                nAjouts & " prévision(s) à importer" & vbCrLf & _
+                nbDoublons & " déjà présente(s) (ignorées)" & vbCrLf & _
+                nbAnterieures & " antérieure(s) à la date du solde initial (ignorées)" & vbCrLf & _
+                nbIgnorees & " ligne(s) sans date, montant ou libellé (ignorées)" & vbCrLf & vbCrLf & _
+                "Importer maintenant ?", vbOKCancel + vbQuestion, "Import de prévisions") <> vbOK Then Exit Sub
+    If nAjouts = 0 Then Exit Sub
+
+    DebutTraitement "Import des prévisions..."
+    ReecrireAvecLignesLibres lo, dP, nP, ColonnesTestPrev(cP), ajouts, nAjouts
+    modRapprochement.RechercherInterne
+    FinTraitement
+    Application.Calculate
+    Afficher nAjouts & " prévision(s) importée(s). Vérifiez les catégories et la colonne Contrôle.", vbInformation, _
+             "Import de prévisions"
+    Exit Sub
+Erreur:
+    msgErr = Err.Description
+    On Error Resume Next
+    If Not wbSrc Is Nothing Then wbSrc.Close SaveChanges:=False
+    TerminerTraitement
+    AfficherErreur "l'import des prévisions", msgErr
+End Sub

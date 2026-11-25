@@ -882,3 +882,97 @@ def traiter(etat: Etat, id_op: str, action: str, categorie: str = "", commentair
     else:
         return "ignorée"
     return "ok"
+
+
+# ---------------------------------------------------------------------------
+# Import de prévisions depuis un autre classeur (miroir de modPrevisions.ImporterPrevisions)
+# ---------------------------------------------------------------------------
+# Mots-clés recherchés dans les en-têtes (normalisés) ; l'ordre de test compte :
+# une colonne n'est attribuée qu'à un seul rôle.
+MOTS_COLONNES_PREVISIONS = [
+    ("date", ["DATE", "ECHEANCE"]),
+    ("debit", ["DEBIT", "DEPENSE", "DEPENSES", "SORTIE", "SORTIES", "DECAISSEMENT", "DECAISSEMENTS"]),
+    ("credit", ["CREDIT", "RECETTE", "RECETTES", "ENTREE", "ENTREES", "ENCAISSEMENT", "ENCAISSEMENTS"]),
+    ("montant", ["MONTANT", "SOMME", "VALEUR"]),
+    ("banque", ["BANQUE", "COMPTE"]),
+    ("categorie", ["CATEGORIE", "RUBRIQUE", "POSTE", "NATURE"]),
+    ("type", ["TYPE", "SENS"]),
+    ("commentaire", ["COMMENTAIRE", "COMMENTAIRES", "NOTE", "NOTES", "REMARQUE", "REMARQUES", "OBSERVATION"]),
+    ("libelle", ["LIBELLE", "DESIGNATION", "DESCRIPTION", "INTITULE", "OPERATION", "OBJET", "TIERS"]),
+]
+
+
+def detecter_colonnes_previsions(entetes: list) -> dict:
+    roles: dict[str, int] = {}
+    pris: set[int] = set()
+    for role, mots in MOTS_COLONNES_PREVISIONS:
+        for j, h in enumerate(entetes):
+            if j in pris:
+                continue
+            n = normaliser_texte("" if h is None else str(h))
+            if n and any(mot in n.split() for mot in mots):
+                roles[role] = j
+                pris.add(j)
+                break
+    return roles
+
+
+def ligne_entete_previsions(lignes: list[list]) -> int:
+    for i, l in enumerate(lignes[:20]):
+        r = detecter_colonnes_previsions(l)
+        if "date" in r and ("montant" in r or "debit" in r or "credit" in r):
+            return i
+    return -1
+
+
+def importer_previsions(etat: Etat, lignes: list[list], banque_defaut: str) -> dict:
+    """Ajoute les prévisions lues ; renvoie les compteurs (importées, ignorées, doublons, antérieures)."""
+    res = {"importees": 0, "ignorees": 0, "doublons": 0, "anterieures": 0}
+    i0 = ligne_entete_previsions(lignes)
+    if i0 < 0:
+        raise ValueError("En-tête introuvable (colonnes Date et Montant / Débit / Crédit attendues)")
+    r = detecter_colonnes_previsions(lignes[i0])
+    existantes = {(p.date, p.banque, p.libelle, cents(p.montant_signe)) for p in etat.previsions}
+
+    def cell(l, role):
+        j = r.get(role)
+        return l[j] if j is not None and j < len(l) else None
+
+    for l in lignes[i0 + 1:]:
+        d = lire_date(cell(l, "date"), "dd/MM/yyyy")
+        if "debit" in r or "credit" in r:
+            deb = lire_montant(cell(l, "debit"), ",") or 0.0
+            cre = lire_montant(cell(l, "credit"), ",") or 0.0
+            mt = abs(cre) - abs(deb)
+        else:
+            mt = lire_montant(cell(l, "montant"), ",") or 0.0
+        typ = normaliser_texte(str(cell(l, "type") or ""))
+        if typ and ("RECETTE" in typ or "ENCAISS" in typ or typ in ("C", "CREDIT", "ENTREE")):
+            mt = abs(mt)
+        elif typ and ("DEPENSE" in typ or "DECAISS" in typ or typ in ("D", "DEBIT", "SORTIE")):
+            mt = -abs(mt)
+        lib = str(cell(l, "libelle") or "").strip() or str(cell(l, "categorie") or "").strip()
+        if d is None or not mt or not lib:
+            if any(c not in (None, "") for c in l):
+                res["ignorees"] += 1
+            continue
+        nom_b = banque_defaut
+        b_txt = normaliser_texte(str(cell(l, "banque") or ""))
+        for b in etat.params.banques:
+            nb = normaliser_texte(b.nom)
+            if b_txt and (nb in b_txt or b_txt in nb or b_txt == b.code):
+                nom_b = b.nom
+        if d <= date_solde(etat.params, nom_b):
+            res["anterieures"] += 1
+            continue
+        cle = (d, nom_b, lib, cents(mt))
+        if cle in existantes:
+            res["doublons"] += 1
+            continue
+        existantes.add(cle)
+        p = Prevision(prochain_id("P-", [x.id for x in etat.previsions], 6), d, nom_b, lib,
+                      str(cell(l, "categorie") or "").strip(), TYPE_RECETTE if mt > 0 else TYPE_DEPENSE, abs(mt),
+                      str(cell(l, "commentaire") or "").strip(), origine="Import")
+        etat.previsions.append(p)
+        res["importees"] += 1
+    return res

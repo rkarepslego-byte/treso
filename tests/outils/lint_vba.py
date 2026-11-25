@@ -38,7 +38,7 @@ second sgn shell space split sqr str strcomp strconv string timer timeserial tri
 weekday year createobject getobject inputbox vartype filecopy name rmdir chdir curdir
 format$ left$ right$ mid$ trim$ lcase$ ucase$ string$ dir$ environ$ chr$ space$ ltrim$ rtrim$ str$
 application thisworkbook activesheet activecell activeworkbook worksheets sheets range cells intersect
-union selection
+union selection workbooks
 """.split())
 
 CONSTANTES = re.compile(r"^(vb|xl|msg)[a-z0-9]*$", re.I)
