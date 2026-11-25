@@ -76,10 +76,10 @@ Recette manuelle complémentaire (5 minutes, sur la démonstration) :
 | Étape | Attendu |
 |---|---|
 | Ouvrir le classeur, activer les macros | Tableau de bord affiché, aucun message d'erreur |
-| Cliquer **Actualiser les banques** | Message : Banque Alpha 10 nouvelles opérations (4 doublons, 1 antérieure), Banque Beta 9 ; propositions certaines et incertaines ; une sauvegarde créée dans `Sauvegardes` |
+| Cliquer **Actualiser les banques** | Message : Banque Alpha 11 nouvelles opérations (5 doublons, 1 antérieure), Banque Beta 10 ; traitements automatiques : 1 virement interne détecté, 2 opérations classées par les règles (frais) ; propositions certaines et incertaines ; une sauvegarde créée dans `Sauvegardes` |
 | Onglet Rapprochement, **Tout valider (certaines)** | Les prévisions concernées passent à « Pointé » dans l'onglet Saisie |
 | Groupe « Carburant flotte » : écrire Oui sur une ligne, **Valider les choix** | Plus aucune proposition |
-| Onglet À traiter : choisir des actions, **Appliquer** | Les opérations disparaissent de la liste ; une charge créée apparaît dans Charges fixes |
+| Onglet À traiter : la ligne « CLIENT MOREL » propose la prévision proche (ID pré-rempli) ; choisir des actions, **Appliquer** | Les opérations disparaissent de la liste ; une charge créée apparaît dans Charges fixes ; les règles apprises apparaissent dans Paramètres |
 | Saisie : ajouter un virement interne | Deux lignes liées ; trésorerie globale prévisionnelle inchangée |
 | Boutons **30 j / 60 j / 90 j** | Le graphique et le tableau jour par jour changent d'horizon |
 | Cliquer de nouveau **Actualiser** | « 0 nouvelle opération », doublons ignorés, soldes inchangés |
