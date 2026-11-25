@@ -289,6 +289,14 @@ python -m pytest tests                                    # tests (LibreOffice r
 Toute modification de la logique doit être faite à l'identique dans le VBA **et** dans
 `reference/moteur.py`, puis vérifiée par les tests et la recette Windows.
 
+**Exécution du VBA hors Excel** : `tests/outils/vba_interpreteur.py` interprète le sous-ensemble de
+VBA utilisé par l'outil et `tests/outils/excel_simule.py` simule le modèle objet Excel nécessaire
+(tables, noms définis, requêtes, application, fichiers), chargé depuis le classeur réellement généré.
+`tests/test_vba_execute.py` exécute ainsi `Actualiser`, `ToutValiderCertaines`, `ValiderChoix`,
+`AppliquerTraitementsInterne`, `GenererEcheancesInterne` et `ImporterPrevisions` et compare les tables
+au moteur de référence. Ce banc ne remplace pas Excel (Power Query, affichage, protection, boîtes de
+dialogue ne sont pas exécutés) : la recette `install/Recette.ps1` reste la validation finale.
+
 ## 3.10 Limites connues
 
 * Windows et Excel bureau uniquement (pas Mac, pas Excel Online).

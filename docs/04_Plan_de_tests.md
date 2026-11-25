@@ -10,11 +10,21 @@ L'outil associe trois technologies qu'aucun environnement hors Windows ne sait e
 | Logique métier (import, doublons, charges fixes, rapprochement, soldes) | **Moteur de référence** Python exécuté sur les scénarios ci-dessous, montants attendus écrits à la main | `tests/test_scenarios.py` (26 tests) |
 | Formules du classeur | Classeur généré dans un état réaliste (import + rapprochements + traitements), **recalculé par LibreOffice**, chaque solde comparé au moteur de référence (au centime) | `tests/test_formules_classeur.py` (8 tests) |
 | Projet VBA | Contrôle statique (blocs, variables non déclarées, appels, colonnes et noms utilisés vs structure réelle, limites VBA) ; `vbaProject.bin` relu par 3 lecteurs indépendants (olefile, olevba, LibreOffice) avec code identique aux sources | `tests/test_integrite_classeur.py` |
+| **Exécution du code VBA** | Le code VBA réel (`src/vba`) est **exécuté** par un interpréteur VBA écrit pour le projet, sur un modèle Excel simulé chargé depuis le vrai classeur généré (mêmes tables et noms) ; l'actualisation Power Query est remplacée par la lecture des relevés par le moteur de référence, à partir du dossier que le VBA écrit lui-même dans la requête `Parametres_Import`. Résultats comparés table par table au moteur de référence. Contrôles stricts : `Set` obligatoire, types des arguments ByRef, appels sans `Call`. Validité vérifiée par injection d'erreurs (4 sur 4 détectées) | `tests/test_vba_execute.py`, `tests/outils/vba_interpreteur.py`, `tests/outils/excel_simule.py` |
 | Power Query | Syntaxe validée par l'analyseur officiel de Microsoft (`@microsoft/powerquery-parser`) sur les sources et sur la section M intégrée au classeur ; logique de lecture reproduite par le moteur de référence | `tests/test_integrite_classeur.py` |
 | Fichier OpenXML | Parties, relations, types de contenu, connexions et queryTables cohérents | `tests/test_integrite_classeur.py` |
 | **Chaîne complète dans Excel** | **Recette automatique Windows** : Power Query + VBA exécutés dans Excel sur les relevés de démonstration, 18 indicateurs comparés aux valeurs attendues du moteur de référence, contrôle de l'absence de doublon au réimport | `install/Recette.ps1` (à lancer sur le poste) |
 
-Commande (poste de développement) : `python -m pytest tests` → **59 tests réussis** (dont 5 pour l'analyse automatique des exports bancaires, 1 pour le classeur vide de mise en service et 1 pour la synthèse mensuelle, 3 pour l'import de prévisions existantes, 7 + 2 pour les automatisations et alertes).
+Commande (poste de développement) : `python -m pytest tests` → **63 tests réussis** (dont 5 pour l'analyse automatique des exports bancaires, 1 pour le classeur vide de mise en service et 1 pour la synthèse mensuelle, 3 pour l'import de prévisions existantes, 7 + 2 pour les automatisations et alertes, 4 pour l'exécution du code VBA).
+
+Scénarios exécutés en VBA (interpréteur) et comparés au moteur de référence :
+actualisation complète de la démonstration (import des 3 relevés, doublons du relevé qui chevauche,
+opération antérieure au solde initial, charges fixes, rapprochement, traitements automatiques,
+liste à traiter, historique, sauvegarde, requête de paramètres) ; seconde actualisation sans doublon ;
+validation des correspondances certaines puis d'une incertaine ; traitements manuels (conserver avec
+apprentissage d'une règle, rapprochement manuel d'un montant différent, création de charge
+mensuelle) ; modification et désactivation de charges fixes ; import de prévisions depuis un ancien
+classeur.
 
 ## 4.2 Scénarios métier (cahier des charges, phase 7)
 

@@ -274,6 +274,7 @@ Public Function ConstruireListeATraiterInterne() As Long
     Dim cles() As String, idx() As Long, liste() As Long, sortie() As Variant
     Dim tolerance As Long, meilleur As Long, meilleurCle As String, cleJ As String, banque As String
     Dim loP As ListObject, cP As Object, dP As Variant, nP As Long, seuil As Double, proche As String, r As Long
+    Dim suggeree As String
 
     Set loA = T(T_ATRAITER)
     Set cA = Colonnes(loA)
@@ -305,7 +306,12 @@ Public Function ConstruireListeATraiterInterne() As Long
         If indexB.Exists(id) Then
             i = indexB(id)
             If Texte(dB(i, C(cB, "Statut"))) = OB_A_TRAITER Then
-                If Texte(dA(k, C(cA, "Catégorie"))) <> "" And Texte(dA(k, C(cA, "Catégorie"))) <> Texte(dB(i, C(cB, "Catégorie"))) Then
+                ' une catégorie simplement suggérée par une règle n'est pas enregistrée comme saisie
+                suggeree = ""
+                r = TrouverRegle(Texte(dB(i, C(cB, "Libellé"))), dRg, nRg, cRg)
+                If r > 0 Then suggeree = Texte(dRg(r, C(cRg, "Catégorie")))
+                If Texte(dA(k, C(cA, "Catégorie"))) <> "" And Texte(dA(k, C(cA, "Catégorie"))) <> Texte(dB(i, C(cB, "Catégorie"))) _
+                   And Not (Texte(dB(i, C(cB, "Catégorie"))) = "" And Texte(dA(k, C(cA, "Catégorie"))) = suggeree) Then
                     dB(i, C(cB, "Catégorie")) = Texte(dA(k, C(cA, "Catégorie")))
                     modifie = True
                 End If
