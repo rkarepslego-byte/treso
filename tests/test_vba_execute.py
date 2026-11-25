@@ -60,7 +60,8 @@ def rafraichir_transit(monde, table, formule):
 @pytest.fixture
 def env(tmp_path):
     chemin = construire(str(tmp_path), REF)
-    monde = Monde(chemin, {"Date_Reference": serie(REF)}, serie(REF) + 0.4, rafraichir_transit)
+    # « Now » = heure réelle (comparée aux dates de modification des fichiers déposés)
+    monde = Monde(chemin, {"Date_Reference": serie(REF)}, datetime_vers_serie(datetime.now()), rafraichir_transit)
     interp = Interpreteur(sources_vba(), monde)
     interp.publics["gsilencieux"].valeur = True
     etat = dd.etat_initial(REF)
@@ -241,3 +242,98 @@ def test_import_de_previsions(env):
     ref = [p for p in etat.previsions if p.origine == "Import"]
     assert [(r["ID"], r["Libellé"], r["Banque"], r["Type"], r["Montant"], r["Date prévue"]) for r in vba] == \
         [(p.id, p.libelle, p.banque, p.type, p.montant, serie(p.date)) for p in ref]
+
+
+def _plage_ligne(monde, nom_table, id_ligne, colonne="ID"):
+    from tests.outils.excel_simule import Plage
+    t = monde.table(nom_table)
+    j = t.entetes.index(colonne)
+    i = next(k for k, l in enumerate(t.lignes) if l[j] == id_ligne)
+    return t, Plage(t, i, 1, j, 1)
+
+
+def test_macros_de_saisie_et_d_administration(env):
+    monde, interp, etat, racine = env
+    g = interp.publics
+
+    # Formulaire : virement interne -> deux lignes liées
+    for nom, v in (("Form_Date", serie(date(2026, 12, 2))), ("Form_Banque", dd.NOM_B1), ("Form_Libelle", "Appro Beta"),
+                   ("Form_Montant", 3000), ("Form_Type", "Virement interne"), ("Form_BanqueDest", dd.NOM_B2)):
+        monde.classeur.noms[nom.lower()].valeur = v
+    interp.appeler("AjouterOperation")
+    prev = [r for r in monde.table("tbl_Previsions").dicts() if r["Libellé"] == "Appro Beta"]
+    assert [(r["Banque"], r["Type"]) for r in prev] == [(dd.NOM_B1, "Virement sortant"), (dd.NOM_B2, "Virement entrant")]
+    assert prev[0]["Lien virement"] == prev[1]["ID"] and prev[1]["Lien virement"] == prev[0]["ID"]
+    assert monde.nom("Form_Libelle") is EMPTY and monde.nom("Form_Montant") is EMPTY
+
+    # Saisie invalide : refusée avec un message, rien n'est ajouté
+    nb = len([r for r in monde.table("tbl_Previsions").dicts() if r["ID"] is not EMPTY])
+    monde.classeur.noms["form_montant"].valeur = EMPTY
+    monde.classeur.noms["form_libelle"].valeur = "Sans montant"
+    interp.appeler("AjouterOperation")
+    assert len([r for r in monde.table("tbl_Previsions").dicts() if r["ID"] is not EMPTY]) == nb
+    assert "pas été ajoutée" in g["gjournal"].valeur
+
+    # Tri par date
+    interp.appeler("TrierPrevisions")
+    dates = [r["Date prévue"] for r in monde.table("tbl_Previsions").dicts() if r["ID"] is not EMPTY]
+    assert dates == sorted(dates)
+
+    # Suppression d'une prévision saisie (et de sa contrepartie de virement)
+    _t, cellule = _plage_ligne(monde, "tbl_Previsions", prev[0]["ID"])
+    monde.active = next(f for f in monde.classeur.feuilles if f.p_name == "Saisie")
+    monde.cellule_active = cellule
+    interp.appeler("SupprimerLigne")
+    assert not [r for r in monde.table("tbl_Previsions").dicts() if r["Libellé"] == "Appro Beta"]
+
+    # Actualisation, validation puis annulation d'un rapprochement depuis le journal bancaire
+    interp.appeler("Actualiser")
+    interp.appeler("ToutValiderCertaines")
+    pointee = next(r for r in monde.table("tbl_Banque").dicts() if r["Statut"] == "Pointé")
+    id_prev = pointee["ID prévision"]
+    _t, cellule = _plage_ligne(monde, "tbl_Banque", pointee["ID"])
+    monde.active = next(f for f in monde.classeur.feuilles if f.p_name == "Opérations bancaires")
+    monde.cellule_active = cellule
+    interp.appeler("AnnulerRapprochement")
+    op = next(r for r in monde.table("tbl_Banque").dicts() if r["ID"] == pointee["ID"])
+    pv = next(r for r in monde.table("tbl_Previsions").dicts() if r["ID"] == id_prev)
+    assert op["Statut"] in ("À traiter", "Proposé") and op["ID prévision"] in (EMPTY, "")
+    assert pv["Statut"] == "Prévu" and pv["ID opération"] in (EMPTY, "")
+
+    # Contrôle d'intégrité
+    g["gjournal"].valeur = ""
+    interp.appeler("Admin_VerifierIntegrite")
+    assert "Aucune incohérence" in g["gjournal"].valeur, g["gjournal"].valeur
+
+    # Nouveaux relevés : aucun après l'actualisation, un après dépôt d'un fichier
+    assert interp.appeler("NouveauxReleves") == 0
+    src = os.path.join(racine, "Imports", "Banque1", "releve_alpha_partie2.csv")
+    with open(src, "rb") as f:
+        contenu = f.read()
+    with open(os.path.join(racine, "Imports", "Banque1", "releve_decembre.csv"), "wb") as f:
+        f.write(contenu)
+    assert interp.appeler("NouveauxReleves") == 1
+    assert interp.appeler("TexteAlertes") is not None
+
+    # Remise à zéro (mot de passe + confirmation)
+    monde.reponses_inputbox = ["Treso2026", "VIDER"]
+    interp.appeler("Admin_ViderDonnees")
+    assert not [r for r in monde.table("tbl_Banque").dicts() if r["ID"] is not EMPTY]
+    assert not [r for r in monde.table("tbl_Previsions").dicts() if r["ID"] is not EMPTY]
+    assert len(monde.table("tbl_Previsions").lignes) == 30
+    assert g["gderniereerreur"].valeur == ""
+
+
+def test_recette_executee_en_vba(env):
+    monde, interp, etat, racine = env
+    res = interp.appeler("Recette_Executer", serie(REF))
+    assert res.startswith("Erreur=;"), res
+    valeurs = dict(x.split("=", 1) for x in res.split(";"))
+    actualiser_reference(etat, racine)
+    m.valider_certaines(etat)
+    assert int(valeurs["NbOperations"]) == len(etat.operations)
+    assert int(valeurs["NbPointees"]) == sum(1 for o in etat.operations if o.statut == m.OB_POINTE)
+    assert int(valeurs["NbFichiersHistorique"]) == len(etat.historique)
+    res2 = interp.appeler("Recette_Reimporter")
+    v2 = dict(x.split("=", 1) for x in res2.split(";"))
+    assert v2["Erreur"] == "" and v2["Avant"] == v2["Apres"]

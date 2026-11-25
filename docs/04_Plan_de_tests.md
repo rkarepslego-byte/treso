@@ -15,7 +15,7 @@ L'outil associe trois technologies qu'aucun environnement hors Windows ne sait e
 | Fichier OpenXML | Parties, relations, types de contenu, connexions et queryTables cohérents | `tests/test_integrite_classeur.py` |
 | **Chaîne complète dans Excel** | **Recette automatique Windows** : Power Query + VBA exécutés dans Excel sur les relevés de démonstration, 18 indicateurs comparés aux valeurs attendues du moteur de référence, contrôle de l'absence de doublon au réimport | `install/Recette.ps1` (à lancer sur le poste) |
 
-Commande (poste de développement) : `python -m pytest tests` → **63 tests réussis** (dont 5 pour l'analyse automatique des exports bancaires, 1 pour le classeur vide de mise en service et 1 pour la synthèse mensuelle, 3 pour l'import de prévisions existantes, 7 + 2 pour les automatisations et alertes, 4 pour l'exécution du code VBA).
+Commande (poste de développement) : `python -m pytest tests` → **65 tests réussis** (dont 5 pour l'analyse automatique des exports bancaires, 1 pour le classeur vide de mise en service et 1 pour la synthèse mensuelle, 3 pour l'import de prévisions existantes, 7 + 2 pour les automatisations et alertes, 6 pour l'exécution du code VBA).
 
 Scénarios exécutés en VBA (interpréteur) et comparés au moteur de référence :
 actualisation complète de la démonstration (import des 3 relevés, doublons du relevé qui chevauche,
@@ -24,7 +24,9 @@ liste à traiter, historique, sauvegarde, requête de paramètres) ; seconde act
 validation des correspondances certaines puis d'une incertaine ; traitements manuels (conserver avec
 apprentissage d'une règle, rapprochement manuel d'un montant différent, création de charge
 mensuelle) ; modification et désactivation de charges fixes ; import de prévisions depuis un ancien
-classeur.
+classeur ; formulaire de saisie (virement interne, saisie invalide refusée), tri, suppression d'une
+ligne, annulation d'un rapprochement, contrôle d'intégrité, détection des nouveaux relevés, remise à
+zéro, macros de recette.
 
 ## 4.2 Scénarios métier (cahier des charges, phase 7)
 
