@@ -245,8 +245,9 @@ CATEGORIES = Table("tbl_Categories", F_PARAM, 5, 5, [
 ], lignes_libres=0)
 
 REGLES = Table("tbl_Regles", F_PARAM, 5, 8, [
-    Colonne("Mot-clé", SAISIE, FMT_TEXTE, 18),
+    Colonne("Mot-clé", SAISIE, FMT_TEXTE, 22),
     Colonne("Catégorie", SAISIE, FMT_TEXTE, 22, liste="L_Categories"),
+    Colonne("Action automatique", SAISIE, FMT_TEXTE, 26, liste="L_ActionsAuto"),
 ], lignes_libres=0)
 
 HISTORIQUE = Table("tbl_Historique", F_HISTO, 1, 0, [
@@ -332,6 +333,20 @@ PARAMETRES = [
         ("Auto_Valider", "Validation automatique des correspondances certaines", "Non", None,
          "Oui / Non. Les correspondances incertaines ne sont jamais validées automatiquement."),
     ]),
+    ("Automatisation", [
+        ("Apprendre_Regles", "Mémoriser les traitements manuels (règles apprises)", "Oui", None,
+         "Classer une opération non prévue crée une règle (mot-clé du libellé -> catégorie et action)."),
+        ("Traitement_Auto", "Traiter automatiquement les opérations reconnues par une règle", "Oui", None,
+         "Jamais si une prévision proche (montant différent) pourrait correspondre."),
+        ("Virements_Auto", "Détecter automatiquement les virements internes non prévus", "Oui", None,
+         "Montants opposés dans les deux banques, libellés de virement, écart ≤ « écart max. certaine »."),
+        ("Actualiser_Ouverture", "Proposer l'actualisation à l'ouverture si nouveaux relevés", "Oui", None,
+         "Oui / Non."),
+        ("Seuil_Alerte", "Seuil d'alerte de la trésorerie globale", 0, FMT_EUR,
+         "Bandeau d'alerte si la trésorerie globale prévue passe sous ce montant (ou si une banque devient négative)."),
+        ("Jours_Echues", "Signaler les prévisions échues depuis plus de (jours)", 15, FMT_ENTIER,
+         "Rappel affiché après chaque actualisation."),
+    ]),
     ("Prévisions", [
         ("Horizon_Mois", "Horizon de génération des charges fixes (mois)", 12, FMT_ENTIER,
          "Les échéances sont générées jusqu'à cette date."),
@@ -359,6 +374,7 @@ LISTES = {
                   "Créer charge mensuelle", "Créer charge trimestrielle", "Créer charge semestrielle",
                   "Créer charge annuelle"],
     "L_Afficher": ["Tout", "Prévisions uniquement", "Réel uniquement"],
+    "L_ActionsAuto": ["Conserver comme non prévue", "Virement interne"],
     "L_Horizon": [30, 60, 90],
 }
 
@@ -374,10 +390,13 @@ CATEGORIES_DEFAUT = [
 ]
 
 REGLES_DEFAUT = [
-    ("URSSAF", "Charges sociales"), ("DGFIP", "Impôts et taxes"), ("IMPOTS", "Impôts et taxes"),
-    ("EDF", "Énergie"), ("ENGIE", "Énergie"), ("ORANGE", "Télécom / Internet"), ("SFR", "Télécom / Internet"),
-    ("FREE", "Télécom / Internet"), ("AXA", "Assurances"), ("MAAF", "Assurances"), ("OVH", "Informatique"),
-    ("MICROSOFT", "Informatique"), ("TOTAL", "Véhicules / Carburant"), ("PEAGE", "Véhicules / Carburant"),
-    ("SNCF", "Déplacements"), ("COMMISSION", "Frais bancaires"), ("FRAIS", "Frais bancaires"),
-    ("COTIS", "Frais bancaires"), ("SALAIRE", "Salaires"), ("LOYER", "Loyer"),
+    ("URSSAF", "Charges sociales", ""), ("DGFIP", "Impôts et taxes", ""), ("IMPOTS", "Impôts et taxes", ""),
+    ("EDF", "Énergie", ""), ("ENGIE", "Énergie", ""), ("ORANGE", "Télécom / Internet", ""),
+    ("SFR", "Télécom / Internet", ""), ("FREE", "Télécom / Internet", ""), ("AXA", "Assurances", ""),
+    ("MAAF", "Assurances", ""), ("OVH", "Informatique", ""), ("MICROSOFT", "Informatique", ""),
+    ("TOTAL", "Véhicules / Carburant", ""), ("PEAGE", "Véhicules / Carburant", ""), ("SNCF", "Déplacements", ""),
+    ("FRAIS", "Frais bancaires", ""), ("SALAIRE", "Salaires", ""), ("LOYER", "Loyer", ""),
+    ("FRAIS TENUE", "Frais bancaires", "Conserver comme non prévue"),
+    ("COMMISSION", "Frais bancaires", "Conserver comme non prévue"),
+    ("COTIS", "Frais bancaires", "Conserver comme non prévue"),
 ]

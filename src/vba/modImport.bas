@@ -19,6 +19,7 @@ Public Sub Actualiser()
     Dim rep As VbMsgBoxResult, n As Long, code As Variant, erreurLecture As String
     Dim rapport As String, msgErr As String, sauvegarde As String, resultatTraitements As String
     Dim nbCreees As Long, nbSuppr As Long, nbCert As Long, nbIncert As Long, nbAuto As Long, nbATraiter As Long
+    Dim nbVirAuto As Long, nbReglesAuto As Long
 
     On Error GoTo Erreur
     n = modATraiter.ActionsEnAttente()
@@ -62,13 +63,20 @@ Public Sub Actualiser()
     modPrevisions.GenererEcheancesInterne nbCreees, nbSuppr
     AfficherStatut "Actualisation : rapprochement..."
     modRapprochement.RechercherInterne nbCert, nbIncert, nbAuto
+    AfficherStatut "Actualisation : traitements automatiques..."
+    modATraiter.TraitementsAutomatiquesInterne nbVirAuto, nbReglesAuto
     nbATraiter = modATraiter.ConstruireListeATraiterInterne()
     FinTraitement
     Application.Calculate
     ThisWorkbook.Worksheets(F_TDB).Activate
 
+    If nbVirAuto + nbReglesAuto > 0 Then
+        rapport = rapport & "Traitements automatiques : " & nbVirAuto & " virement(s) interne(s) détecté(s), " & _
+                  nbReglesAuto & " opération(s) classée(s) par les règles." & vbCrLf
+    End If
     Afficher "Actualisation terminée." & vbCrLf & vbCrLf & rapport & vbCrLf & _
            modRapprochement.ResumeRecherche(nbCert, nbIncert, nbAuto, nbATraiter) & vbCrLf & vbCrLf & _
+           TexteAlertes() & _
            IIf(resultatTraitements <> "", "Traitements appliqués : " & resultatTraitements & vbCrLf & vbCrLf, "") & _
            "Sauvegarde : " & sauvegarde & vbCrLf & _
            "Pensez à enregistrer le classeur.", vbInformation, "Trésorerie"
@@ -77,6 +85,91 @@ Erreur:
     msgErr = Err.Description
     TerminerTraitement
     AfficherErreur "l'actualisation", msgErr
+End Sub
+
+'-------------------------------------------------------------------------------
+' Alertes et rappels affichés après l'actualisation
+'-------------------------------------------------------------------------------
+Public Function TexteAlertes() As String
+    Dim s As String, d As Double, lo As ListObject, cP As Object, dP As Variant, i As Long, nb As Long
+    Dim limite As Double
+    On Error Resume Next
+    d = DateVal(ValeurNom("Alerte_B1_Date"))
+    If d > 0 Then s = s & "! " & NomBanque("B1") & " : solde prévisionnel négatif à partir du " & Format$(CDate(d), "dd/mm/yyyy") & vbCrLf
+    d = DateVal(ValeurNom("Alerte_B2_Date"))
+    If d > 0 Then s = s & "! " & NomBanque("B2") & " : solde prévisionnel négatif à partir du " & Format$(CDate(d), "dd/mm/yyyy") & vbCrLf
+    d = DateVal(ValeurNom("Alerte_Global_Date"))
+    If d > 0 Then s = s & "! Trésorerie globale sous le seuil d'alerte à partir du " & Format$(CDate(d), "dd/mm/yyyy") & vbCrLf
+    ' Prévisions échues depuis longtemps
+    limite = DateReference() - Nombre(ValeurNom("Jours_Echues"))
+    Set lo = T(T_PREV)
+    Set cP = Colonnes(lo)
+    dP = LireTable(lo)
+    For i = 1 To NbLignes(dP)
+        If Texte(dP(i, C(cP, "ID"))) <> "" And Texte(dP(i, C(cP, "Statut"))) = P_PREVU _
+           And Texte(dP(i, C(cP, "ID opération"))) = "" And Texte(dP(i, C(cP, "ID proposé"))) = "" Then
+            d = DateVal(dP(i, C(cP, "Date prévue")))
+            If d > 0 And d < limite Then nb = nb + 1
+        End If
+    Next i
+    If nb > 0 Then
+        s = s & "! " & nb & " prévision(s) échue(s) depuis plus de " & CLng(Nombre(ValeurNom("Jours_Echues"))) & _
+            " jours sans opération bancaire : à vérifier ou à annuler (onglet Saisie, colonne Suivi)." & vbCrLf
+    End If
+    If s <> "" Then s = "ALERTES :" & vbCrLf & s & vbCrLf
+    TexteAlertes = s
+End Function
+
+'-------------------------------------------------------------------------------
+' Nouveaux relevés à l'ouverture du classeur
+'-------------------------------------------------------------------------------
+' Nombre de fichiers des dossiers d'import jamais importés (ou modifiés depuis leur dernier import)
+Public Function NouveauxReleves() As Long
+    Dim loH As ListObject, cH As Object, dH As Variant, i As Long, code As Variant, dossier As String
+    Dim derniers As Object, cle As String, f As String, ext As String, dImport As Double
+    On Error GoTo Fin
+    Set loH = T(T_HISTO)
+    Set cH = Colonnes(loH)
+    dH = LireTable(loH)
+    Set derniers = CreateObject("Scripting.Dictionary")
+    For i = 1 To NbLignes(dH)
+        If Texte(dH(i, C(cH, "Erreur"))) = "" Then
+            cle = Texte(dH(i, C(cH, "Banque"))) & "|" & LCase$(Texte(dH(i, C(cH, "Fichier"))))
+            If Nombre(dH(i, C(cH, "Date et heure"))) > Nombre(derniers(cle)) Then derniers(cle) = Nombre(dH(i, C(cH, "Date et heure")))
+        End If
+    Next i
+    For Each code In Array("B1", "B2")
+        dossier = DossierBanque(CStr(code))
+        f = Dir$(dossier & "\*.*")
+        Do While f <> ""
+            ext = LCase$(Mid$(f, InStrRev(f, ".") + 1))
+            If (ext = "csv" Or ext = "txt" Or ext = "xlsx" Or ext = "xls") And Left$(f, 2) <> "~$" Then
+                cle = NomBanque(CStr(code)) & "|" & LCase$(f)
+                dImport = Nombre(derniers(cle))
+                If dImport = 0 Then
+                    NouveauxReleves = NouveauxReleves + 1
+                ElseIf CDbl(FileDateTime(dossier & "\" & f)) > dImport Then
+                    NouveauxReleves = NouveauxReleves + 1
+                End If
+            End If
+            f = Dir$()
+        Loop
+    Next code
+Fin:
+End Function
+
+' Lancée par Workbook_Open (via Application.OnTime) : propose l'actualisation si de nouveaux relevés
+' ont été déposés depuis le dernier import.
+Public Sub ProposerActualisation()
+    Dim n As Long
+    On Error Resume Next
+    If Not EstOui(ValeurNom("Actualiser_Ouverture")) Then Exit Sub
+    n = NouveauxReleves()
+    If n = 0 Then Exit Sub
+    If Afficher(n & " nouveau(x) relevé(s) bancaire(s) détecté(s) dans les dossiers d'import." & vbCrLf & vbCrLf & _
+                "Lancer l'actualisation maintenant ?", vbYesNo + vbQuestion, "Trésorerie") = vbYes Then
+        Actualiser
+    End If
 End Sub
 
 '-------------------------------------------------------------------------------

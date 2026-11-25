@@ -346,6 +346,10 @@ class Generateur:
             "Seuil_Similarite": self.etat.params.seuil_similarite,
             "Auto_Valider": "Oui" if self.etat.params.auto_valider else "Non",
             "Horizon_Mois": self.etat.params.horizon_mois,
+            "Apprendre_Regles": "Oui" if self.etat.params.apprendre_regles else "Non",
+            "Traitement_Auto": "Oui" if self.etat.params.traitement_auto else "Non",
+            "Virements_Auto": "Oui" if self.etat.params.virements_auto else "Non",
+            "Seuil_Alerte": self.etat.params.seuil_alerte,
         }
         if getattr(self.etat, "date_calcul_fixe", False):
             valeurs["Date_Ref_Saisie"] = self.etat.params.date_ref
@@ -367,7 +371,7 @@ class Generateur:
                     ws.write(ligne, 2, v, self.f[style])
                 ws.write(ligne, 3, aide, self.f["texte_gris"])
                 self.nom(nom, S.F_PARAM, ligne, 2)
-                if nom == "Auto_Valider":
+                if nom in ("Auto_Valider", "Apprendre_Regles", "Traitement_Auto", "Virements_Auto", "Actualiser_Ouverture"):
                     ws.data_validation(ligne, 2, ligne, 2, {"validate": "list", "source": ["Oui", "Non"]})
                 elif nom in ("B1_DateSolde", "B2_DateSolde", "Date_Ref_Saisie"):
                     ws.data_validation(ligne, 2, ligne, 2, {"validate": "date", "criteria": "between",
@@ -382,10 +386,11 @@ class Generateur:
         ws.set_column(5, 6, 22)
         ws.set_column(7, 7, 3)
         ws.write(3, 5, "Catégories", self.f["gras"])
-        ws.write(3, 8, "Catégorisation automatique (mot-clé du libellé bancaire)", self.f["gras"])
+        ws.write(3, 8, "Règles automatiques (mot-clé du libellé bancaire -> catégorie, action)", self.f["gras"])
         cats = [[c, t] for c, t in S.CATEGORIES_DEFAUT] + [[None, None]] * 28
         self.ecrire_table(ws, S.CATEGORIES, cats)
-        regles = [[k, c] for k, c in S.REGLES_DEFAUT] + [[None, None]] * 30
+        source = self.etat.regles or [m.Regle(k, c, a) for k, c, a in S.REGLES_DEFAUT]
+        regles = [[r.mot_cle, r.categorie, r.action or None] for r in source] + [[None, None, None]] * 30
         self.ecrire_table(ws, S.REGLES, regles)
         c_cat = S.CATEGORIES.col_debut
         self.wb.define_name("L_Categories",
@@ -597,17 +602,25 @@ class Generateur:
         ws.set_row(5, 28)
         t = S.ATRAITER
         lignes = []
-        regles = S.REGLES_DEFAUT
+        if not self.etat.regles:
+            self.etat.regles = [m.Regle(k, c, a) for k, c, a in S.REGLES_DEFAUT]
         for o in m.a_traiter(self.etat):
             r = [None] * len(t.colonnes)
+            proche = m.prevision_proche(self.etat, o)
             sugg = m.suggestion_virement(self.etat, o)
             categorie = o.categorie
             if not categorie:
-                lib = " " + m.normaliser_texte(o.libelle) + " "
-                categorie = next((c for k, c in regles if m.normaliser_texte(k) in lib), "")
+                regle = m.trouver_regle(self.etat, o.libelle)
+                categorie = regle.categorie if regle else ""
+            if proche:
+                texte = f"Prévision proche (montant différent) : {proche}"
+            elif sugg:
+                texte = f"Virement interne probable avec {sugg} ({self.etat.op(sugg).banque})"
+            else:
+                texte = None
             v = {"ID opération": o.id, "Date": o.date, "Banque": o.banque, "Libellé": o.libelle, "Montant": o.montant,
-                 "Suggestion": (f"Virement interne probable avec {sugg} ({self.etat.op(sugg).banque})" if sugg else None),
-                 "Catégorie": categorie or None, "Commentaire": o.commentaire or None}
+                 "Suggestion": texte, "Catégorie": categorie or None, "Commentaire": o.commentaire or None,
+                 "ID prévision": proche or None}
             for k, val in v.items():
                 r[t.index(k)] = val
             lignes.append(r)
@@ -663,6 +676,15 @@ class Generateur:
         ("Suivi_Ouverture", '=IF(Suivi_Banque="Toutes",B1_SoldeInit+B2_SoldeInit,IF(Suivi_Banque=B1_Nom,B1_SoldeInit,'
                             'IF(Suivi_Banque=B2_Nom,B2_SoldeInit,0)))', S.FMT_EUR),
         ("Suivi_NbLignes", "=COUNT(tbl_Banque[Rang vue])+COUNT(tbl_Previsions[Rang vue])", "0"),
+        ("Alerte_B1_Date", '=IF(MINIFS(Calc_Dates,Calc_SoldeB1,"<0")=0,"",MINIFS(Calc_Dates,Calc_SoldeB1,"<0"))', S.FMT_DATE),
+        ("Alerte_B2_Date", '=IF(MINIFS(Calc_Dates,Calc_SoldeB2,"<0")=0,"",MINIFS(Calc_Dates,Calc_SoldeB2,"<0"))', S.FMT_DATE),
+        ("Alerte_Global_Date", '=IF(MINIFS(Calc_Dates,Calc_SoldeGlobal,"<"&Seuil_Alerte)=0,"",'
+                               'MINIFS(Calc_Dates,Calc_SoldeGlobal,"<"&Seuil_Alerte))', S.FMT_DATE),
+        ("Alerte_Date", '=IF(COUNT(Alerte_B1_Date,Alerte_B2_Date,Alerte_Global_Date)=0,"",'
+                        'MIN(Alerte_B1_Date,Alerte_B2_Date,Alerte_Global_Date))', S.FMT_DATE),
+        ("Alerte_Texte", '=IF(Alerte_Date="","","⚠ ALERTE TRÉSORERIE (90 jours) : "&IF(Alerte_B1_Date<>"",B1_Nom&'
+                         '" passe en négatif ; ","")&IF(Alerte_B2_Date<>"",B2_Nom&" passe en négatif ; ","")&'
+                         'IF(Alerte_Global_Date<>"","trésorerie globale sous le seuil d\'alerte ; ","")&"premier jour concerné :")', None),
     ]
 
     def onglet_calculs(self):
@@ -672,7 +694,7 @@ class Generateur:
         ws.set_column(3, 12, 13)
         for i, (nom, formule, fmt) in enumerate(self.CALCULS):
             ws.write(i, 0, nom)
-            ws.write_formula(i, 1, formule, self.fmt(num_format=fmt))
+            ws.write_formula(i, 1, formule, self.fmt(**({"num_format": fmt} if fmt else {})))
             self.nom(nom, S.F_CALC, i, 1)
         entetes = ["Jour", "Date", "Cumul B1", "Solde B1", "Cumul B2", "Solde B2", "Solde global", "Flux B1",
                    "Flux B2", "Flux global"]
@@ -918,7 +940,16 @@ class Generateur:
         self.bouton(ws, "N5", "Synthèse", "AllerSynthese", 85, 34, BLEU, dx=20)
         self.bouton(ws, "P5", "Aide", "AllerAide", 55, 34, GRIS, dx=0)
         ws.set_row(4, 30)
-        ws.set_row(5, 10)
+        # Bandeau d'alerte (vide en l'absence d'alerte)
+        f_alerte = self.fmt(bold=True, font_color=ROUGE, valign="vcenter", indent=1)
+        ws.merge_range(5, 1, 5, 11, "", f_alerte)
+        ws.write_formula(5, 1, "=Alerte_Texte", f_alerte)
+        f_alerte_d = self.fmt(bold=True, font_color=ROUGE, valign="vcenter", num_format="dd/mm/yyyy", align="left")
+        ws.merge_range(5, 12, 5, 14, "", f_alerte_d)
+        ws.write_formula(5, 12, "=Alerte_Date", f_alerte_d)
+        ws.conditional_format(5, 1, 5, 14, {"type": "formula", "criteria": '=Alerte_Texte<>""',
+                                            "format": self.wb.add_format({"bg_color": "#FEE2E2"})})
+        ws.set_row(5, 24)
 
         ws.merge_range(7, 1, 7, 15, "SOLDES RÉELS (opérations bancaires importées)", self.f["section"])
         ws.set_row(7, 20)
@@ -1129,6 +1160,7 @@ def resultats_recette(ref: date, dossier_releves: str) -> dict:
     m.importer(etat, m.preparer_import(f2, p2), datetime.now())
     m.generer_echeances(etat)
     m.rechercher(etat)
+    m.traitements_automatiques(etat)
     m.valider_certaines(etat)
     b1, b2 = dd.NOM_B1, dd.NOM_B2
     r = {

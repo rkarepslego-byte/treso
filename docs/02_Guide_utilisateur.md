@@ -141,6 +141,28 @@ Onglet **À traiter** : opérations bancaires sans prévision correspondante. Po
      et une charge fixe est créée pour les prochaines échéances ;
 4. cliquer **Appliquer les traitements**.
 
+### Ce que l'outil fait tout seul
+
+* **Il apprend vos traitements.** Quand vous conservez une opération non prévue avec une catégorie
+  (ou la classez en virement interne), une règle est mémorisée (onglet Paramètres, « Règles
+  automatiques ») : les opérations semblables des relevés suivants (frais de tenue de compte,
+  abonnement, commission…) sont classées automatiquement et n'apparaissent plus dans « À traiter ».
+  Vous pouvez modifier ou supprimer ces règles (vider la colonne « Action automatique » pour ne garder
+  que la suggestion de catégorie).
+* **Il ne prend jamais de risque** : si une prévision proche (même banque, libellé ressemblant, montant
+  différent) existe, l'opération reste à traiter et la colonne Suggestion indique « Prévision proche »,
+  avec son numéro déjà pré-rempli : il suffit de choisir l'action « Rapprocher avec la prévision indiquée ».
+* **Il reconnaît les virements entre vos deux banques** non prévus (montants opposés, libellés de
+  virement, quelques jours d'écart) et les classe automatiquement.
+* **Il vous prévient** : un bandeau rouge en haut du tableau de bord signale si une banque va passer
+  en négatif ou si la trésorerie globale va passer sous le seuil d'alerte (Paramètres) dans les
+  90 jours ; le message d'actualisation le rappelle, ainsi que les prévisions échues depuis longtemps.
+* **Il propose d'actualiser** dès l'ouverture du classeur quand de nouveaux relevés ont été déposés.
+
+Chaque automatisme se désactive dans **Paramètres > Automatisation**. Une opération classée
+automatiquement porte le mode « Automatique » (onglet Opérations bancaires) et peut être remise à
+traiter avec **Annuler le rapprochement / traitement**.
+
 ---
 
 ## 7. Lire le tableau de bord

@@ -342,7 +342,7 @@ Public Function NormaliserTexte(ByVal s As String) As String
     NormaliserTexte = Application.WorksheetFunction.Trim(r)
 End Function
 
-Private Function MotsSignificatifs(ByVal libelle As String, mots() As String) As Long
+Public Function MotsSignificatifs(ByVal libelle As String, mots() As String) As Long
     Dim brut() As String, i As Long, n As Long, m As String, norm As String
     norm = NormaliserTexte(libelle)
     If norm = "" Then

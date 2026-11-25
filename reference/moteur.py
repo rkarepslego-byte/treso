@@ -172,6 +172,10 @@ class Parametres:
     ecart_certain: int = 3
     auto_valider: bool = False
     horizon_mois: int = 12
+    apprendre_regles: bool = True     # mémoriser les traitements manuels sous forme de règles
+    traitement_auto: bool = True      # appliquer automatiquement les règles ayant une action
+    virements_auto: bool = True       # détecter automatiquement les virements internes non prévus
+    seuil_alerte: float = 0.0         # alerte si la trésorerie globale prévue passe sous ce seuil
 
     def banque(self, nom: str) -> Banque | None:
         for b in self.banques:
@@ -253,6 +257,14 @@ class Proposition:
 
 
 @dataclass
+class Regle:
+    """Règle de catégorisation / traitement automatique (table tbl_Regles)."""
+    mot_cle: str
+    categorie: str
+    action: str = ""   # "" | "Conserver comme non prévue" | "Virement interne"
+
+
+@dataclass
 class Etat:
     """État complet du classeur (équivalent des tables Excel)."""
     params: Parametres
@@ -262,6 +274,7 @@ class Etat:
     rejets: set[tuple[str, str]] = field(default_factory=set)
     propositions: list[Proposition] = field(default_factory=list)
     historique: list[dict] = field(default_factory=list)
+    regles: list["Regle"] = field(default_factory=list)
 
     # -- accès ---------------------------------------------------------------
     def op(self, id_: str) -> OpBanque | None:
@@ -858,9 +871,11 @@ def traiter(etat: Etat, id_op: str, action: str, categorie: str = "", commentair
         o.statut = OB_NON_PREVUE
         if not o.categorie:
             o.categorie = "Non catégorisé"
+        apprendre(etat, o, action)
     elif action == "Virement interne":
         o.statut = OB_VIREMENT
         o.categorie = o.categorie or "Virement interne"
+        apprendre(etat, o, action)
     elif action == "Rapprocher avec la prévision indiquée":
         p = etat.prev(id_prevision)
         if p is None or p.banque != o.banque or p.statut in (PREV_POINTE, PREV_ANNULE) or p.id_operation:
@@ -976,3 +991,117 @@ def importer_previsions(etat: Etat, lignes: list[list], banque_defaut: str) -> d
         etat.previsions.append(p)
         res["importees"] += 1
     return res
+
+
+# ---------------------------------------------------------------------------
+# Automatisations (miroir de modATraiter : règles, virements, prévision proche)
+# ---------------------------------------------------------------------------
+ACTION_CONSERVER = "Conserver comme non prévue"
+ACTION_VIREMENT = "Virement interne"
+MODE_AUTO_REGLE = "Automatique"
+
+
+def regle_correspond(regle: Regle, libelle: str) -> bool:
+    """Chaque mot du mot-clé doit commencer un mot du libellé (« COTIS » couvre « COTISATION »)."""
+    mots_l = normaliser_texte(libelle).split()
+    mots_k = normaliser_texte(regle.mot_cle).split()
+    return bool(mots_k) and all(any(l.startswith(k) for l in mots_l) for k in mots_k)
+
+
+def trouver_regle(etat: Etat, libelle: str) -> Regle | None:
+    """La règle la plus précise (plus grand nombre de mots) ; à égalité, la première de la table."""
+    meilleure, nb_max = None, 0
+    for r in etat.regles:
+        nb = len(normaliser_texte(r.mot_cle).split())
+        if r.categorie and nb > nb_max and regle_correspond(r, libelle):
+            meilleure, nb_max = r, nb
+    return meilleure
+
+
+def mot_cle_appris(libelle: str) -> str:
+    mots = [m for m in mots_significatifs(libelle) if not any(c.isdigit() for c in m)]
+    return " ".join(mots[:3])
+
+
+def apprendre(etat: Etat, o: OpBanque, action: str) -> Regle | None:
+    if not etat.params.apprendre_regles or not o.categorie or o.categorie == "Non catégorisé":
+        return None
+    cle = mot_cle_appris(o.libelle)
+    if not cle:
+        return None
+    for r in etat.regles:
+        if normaliser_texte(r.mot_cle) == cle:
+            r.categorie, r.action = o.categorie, action
+            return r
+    r = Regle(cle, o.categorie, action)
+    etat.regles.append(r)
+    return r
+
+
+def prevision_proche(etat: Etat, o: OpBanque) -> str:
+    """Prévision en attente, même banque et même sens, dans la tolérance, au libellé similaire mais de
+    montant différent : rapprochement manuel probable (l'opération n'est alors jamais traitée
+    automatiquement)."""
+    meilleure, cle_min = "", None
+    for p in etat.previsions:
+        if not _prev_candidate(etat.params, p) or p.banque != o.banque:
+            continue
+        if (p.montant_signe < 0) != (o.montant < 0) or cents(p.montant_signe) == cents(o.montant):
+            continue
+        ecart = abs((o.date - p.date).days)
+        if ecart > etat.params.tolerance:
+            continue
+        sim = similarite(o.libelle, p.libelle)
+        if sim < etat.params.seuil_similarite:
+            continue
+        cle = (-sim, ecart, p.id)
+        if cle_min is None or cle < cle_min:
+            meilleure, cle_min = p.id, cle
+    return meilleure
+
+
+def _est_virement(o: OpBanque) -> bool:
+    return any(m.startswith("VIR") for m in normaliser_texte(o.libelle).split())
+
+
+def traitements_automatiques(etat: Etat) -> dict:
+    """Après la recherche des correspondances : virements internes non prévus puis règles."""
+    res = {"virements": 0, "regles": 0}
+    params = etat.params
+    if params.virements_auto:
+        for o in a_traiter(etat):
+            if o.statut != OB_A_TRAITER or not _est_virement(o):
+                continue
+            candidats = [x for x in a_traiter(etat)
+                         if x.banque != o.banque and x.statut == OB_A_TRAITER and _est_virement(x)
+                         and cents(x.montant) == -cents(o.montant) and abs((x.date - o.date).days) <= params.ecart_certain]
+            if not candidats:
+                continue
+            x = min(candidats, key=lambda c: (abs((c.date - o.date).days), c.id))
+            for op in (o, x):
+                op.statut = OB_VIREMENT
+                op.categorie = op.categorie or "Virement interne"
+                op.mode = MODE_AUTO_REGLE
+            res["virements"] += 1
+    if params.traitement_auto:
+        for o in a_traiter(etat):
+            r = trouver_regle(etat, o.libelle)
+            if r is None or r.action not in (ACTION_CONSERVER, ACTION_VIREMENT) or prevision_proche(etat, o):
+                continue
+            o.statut = OB_NON_PREVUE if r.action == ACTION_CONSERVER else OB_VIREMENT
+            o.categorie = r.categorie
+            o.mode = MODE_AUTO_REGLE
+            res["regles"] += 1
+    return res
+
+
+def premiere_alerte(etat: Etat, nom_banque: str | None, seuil: float, nb_jours: int = 90) -> date | None:
+    """Premier jour (J+0..J+nb_jours) où le solde prévisionnel passe sous le seuil (None = global)."""
+    for j in range(nb_jours + 1):
+        if nom_banque is None:
+            s = sum(solde_previsionnel(etat, b.nom, j) for b in etat.params.banques)
+        else:
+            s = solde_previsionnel(etat, nom_banque, j)
+        if s < seuil:
+            return etat.params.date_ref + timedelta(days=j)
+    return None

@@ -14,7 +14,7 @@ L'outil associe trois technologies qu'aucun environnement hors Windows ne sait e
 | Fichier OpenXML | Parties, relations, types de contenu, connexions et queryTables cohérents | `tests/test_integrite_classeur.py` |
 | **Chaîne complète dans Excel** | **Recette automatique Windows** : Power Query + VBA exécutés dans Excel sur les relevés de démonstration, 18 indicateurs comparés aux valeurs attendues du moteur de référence, contrôle de l'absence de doublon au réimport | `install/Recette.ps1` (à lancer sur le poste) |
 
-Commande (poste de développement) : `python -m pytest tests` → **50 tests réussis** (dont 5 pour l'analyse automatique des exports bancaires, 1 pour le classeur vide de mise en service et 1 pour la synthèse mensuelle, 3 pour l'import de prévisions existantes).
+Commande (poste de développement) : `python -m pytest tests` → **59 tests réussis** (dont 5 pour l'analyse automatique des exports bancaires, 1 pour le classeur vide de mise en service et 1 pour la synthèse mensuelle, 3 pour l'import de prévisions existantes, 7 + 2 pour les automatisations et alertes).
 
 ## 4.2 Scénarios métier (cahier des charges, phase 7)
 
@@ -32,6 +32,13 @@ Banque 1 : solde initial 10 000 € au 31/10/2026 ; Banque 2 : 5 000 € ; date 
 | 8 | Import répété du même relevé | 4 imports successifs du même fichier : 3 opérations, solde 8 622,50 €, historique de 4 imports | ✅ |
 | 9 | Relevés qui se chevauchent | Relevés du 02 au 13/11 et du 12 au 20/11 (avec deux péages identiques dans la zone commune) : 5 opérations, solde exact, quel que soit l'ordre ; un 3e péage identique dans le second relevé est ajouté (1 seul) | ✅ |
 | 10 | Libellé bancaire différent | « Assurance locaux » vs « PRLV SEPA AXA FRANCE IARD CONTRAT 1234 » : similarité < 40 % mais écart de 2 jours → certaine ; la similarité départage deux prévisions de même montant (« Abonnement Orange » suggérée pour « PRLV SEPA ORANGE SA ») ; correspondance unique mais lointaine et dissemblable → incertaine | ✅ |
+
+Automatisations testées (`tests/test_automatisations.py`) : règle apprise lors d'un traitement manuel
+puis appliquée au relevé suivant ; règle **non** appliquée quand une prévision proche de montant
+différent existe ; règle la plus précise retenue ; virement interne non prévu détecté, mais pas pour des
+montants opposés sans libellé de virement ni au-delà de l'écart autorisé ; automatismes désactivables ;
+premières dates d'alerte (banque négative, trésorerie globale sous le seuil), également vérifiées dans
+les formules recalculées.
 
 Règles transverses également testées : opérations antérieures à la date du solde initial ignorées,
 prévision échue restant due et « à contrôler », rejet d'une proposition, validation contradictoire

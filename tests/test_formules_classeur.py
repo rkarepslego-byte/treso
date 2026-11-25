@@ -33,6 +33,7 @@ def etat_apres_actualisation(ref: date) -> m.Etat:
     m.importer(etat, m.preparer_import(f2, p2), datetime(2026, 11, 25, 9, 30))
     m.generer_echeances(etat)
     m.rechercher(etat)
+    m.traitements_automatiques(etat)
     # L'utilisateur valide toutes les correspondances certaines sauf une (laissée en attente)
     certaines = [pr for pr in etat.propositions if pr.niveau == m.NIVEAU_CERTAINE]
     m.valider(etat, [(pr.op.id, pr.prev.id, "Oui") for pr in certaines[:-1]])
@@ -262,3 +263,29 @@ def test_synthese_mensuelle(classeur):
     assert approx(ws.cell(r_solde, 3 + 5).value,
                   m.solde_previsionnel(etat, dd.NOM_B1, (fin(mois[5]) - REF).days - 1)
                   + m.solde_previsionnel(etat, dd.NOM_B2, (fin(mois[5]) - REF).days - 1))
+
+
+def test_alertes_de_tresorerie(classeur):
+    etat, wb = classeur
+    v = valeurs_nommees(wb)
+
+    def lu(nom):
+        x = v.get(nom)
+        return x.date() if hasattr(x, "date") else None
+
+    assert lu("Alerte_B1_Date") == m.premiere_alerte(etat, dd.NOM_B1, 0)
+    assert lu("Alerte_B2_Date") == m.premiere_alerte(etat, dd.NOM_B2, 0)
+    assert lu("Alerte_Global_Date") == m.premiere_alerte(etat, None, etat.params.seuil_alerte)
+
+
+def test_alerte_avec_seuil(tmp_path):
+    if not LO_DISPONIBLE:
+        pytest.skip("LibreOffice indisponible")
+    etat = etat_apres_actualisation(REF)
+    etat.params.seuil_alerte = 30000.0
+    wb = generer_et_recalculer(etat, str(tmp_path))
+    v = {wb["Calculs"].cell(r, 1).value: wb["Calculs"].cell(r, 2).value for r in range(1, 45)}
+    attendu = m.premiere_alerte(etat, None, 30000.0)
+    assert attendu is not None and v["Alerte_Global_Date"].date() == attendu
+    assert v["Alerte_Texte"].startswith("⚠ ALERTE")
+    assert wb["Tableau de bord"]["B6"].value.startswith("⚠ ALERTE")

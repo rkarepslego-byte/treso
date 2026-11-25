@@ -179,6 +179,33 @@ prévision (non pointée, non annulée, non liée) si : **même banque**, **mêm
 * Validation : un même ID ne peut être validé deux fois dans un même lot (sinon rien n'est enregistré).
 * Rapprochement manuel (montants différents) depuis l'onglet À traiter.
 
+## 3.5 bis Automatisations (`modATraiter.TraitementsAutomatiquesInterne`)
+
+Exécutées à chaque actualisation, **après** la recherche des correspondances, sur les seules opérations
+restées « à traiter » (aucune prévision candidate). Miroir testé : `reference/moteur.py`
+(`traitements_automatiques`, `apprendre`, `prevision_proche`, `trouver_regle`), tests
+`tests/test_automatisations.py`.
+
+1. **Virements internes non prévus** (`Virements_Auto`) : deux opérations à traiter de banques
+   différentes, montants opposés au centime, écart ≤ `Ecart_Certain`, libellés contenant un mot
+   commençant par « VIR » → statut « Virement interne », mode « Automatique ».
+2. **Règles** (`Traitement_Auto`, table `tbl_Regles`) : la règle retenue est la plus précise (plus grand
+   nombre de mots) dont **chaque mot commence un mot du libellé** normalisé. Si elle porte une
+   « Action automatique » (Conserver comme non prévue / Virement interne), l'opération est traitée,
+   **sauf** s'il existe une prévision proche : même banque, même sens, montant différent, écart ≤
+   tolérance, similarité ≥ seuil (on laisse alors l'utilisateur rapprocher manuellement, pour éviter
+   tout double comptage). Une règle sans action ne fait que suggérer la catégorie.
+3. **Apprentissage** (`Apprendre_Regles`) : lorsqu'un utilisateur applique « Conserver comme non
+   prévue » (avec une catégorie) ou « Virement interne », une règle est créée ou mise à jour avec pour
+   mot-clé les 3 premiers mots significatifs du libellé sans chiffre (ex. « FRAIS TENUE COMPTE »).
+4. **Alertes** (formules, onglet Calculs) : `Alerte_B1_Date` / `Alerte_B2_Date` = premier jour (J+0 à
+   J+90) de solde prévisionnel négatif ; `Alerte_Global_Date` = premier jour sous `Seuil_Alerte` ;
+   bandeau `Alerte_Texte` sur le tableau de bord, rappel dans le message d'actualisation avec les
+   prévisions échues depuis plus de `Jours_Echues` jours.
+5. **Ouverture** (`Actualiser_Ouverture`) : `Workbook_Open` planifie `ProposerActualisation`, qui compte
+   les fichiers des dossiers d'import jamais importés ou modifiés depuis leur dernier import
+   (`tbl_Historique`) et propose l'actualisation.
+
 ## 3.6 Charges fixes (sans effet rétroactif)
 
 À chaque génération (actualisation ou bouton) :

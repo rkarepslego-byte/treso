@@ -43,9 +43,11 @@ def parametres_demo(ref: date) -> m.Parametres:
 
 def etat_initial(ref: date) -> m.Etat:
     """Prévisions et charges fixes telles qu'un utilisateur les aurait saisies."""
+    from build.schema import REGLES_DEFAUT
     params = parametres_demo(ref)
     d0 = params.banques[0].date_solde
     etat = m.Etat(params)
+    etat.regles = [m.Regle(k, c, a) for k, c, a in REGLES_DEFAUT]
     debut = d0 - timedelta(days=60)
 
     etat.charges = [
@@ -123,6 +125,7 @@ def releves_demo(etat: m.Etat) -> tuple[dict, dict]:
         (_jour(ref, -16), "FRAIS TENUE DE COMPTE", -18.50),
         (_jour(ref, -13), "CB RESTAURANT LE MARAIS", -86.40),
         (_jour(ref, -2), "VIR SEPA RECU CLIENT MOREL", 3500.00),  # montant différent de la prévision (3 600)
+        (_jour(ref, -14), "VIR SEPA VERS BANQUE BETA APPRO", -2000.00),  # virement interne non prévu
     ]
     ops_b1.sort(key=lambda x: x[0])
 
@@ -161,6 +164,7 @@ def releves_demo(etat: m.Etat) -> tuple[dict, dict]:
         (_jour(ref, -11), "CARTE", "PEAGE APRR", 14.20, None, ""),
         (_jour(ref, -8), "COMMISSION", "COTISATION CARTE BUSINESS", 45.00, None, ""),
         (_jour(ref, -15), "VIR SEPA EMIS", "SARL DECO PLUS ACOMPTE", 980.00, None, ""),
+        (_jour(ref, -13), "VIR SEPA RECU", "BANQUE ALPHA APPRO", None, 2000.00, ""),
     ]
     ops_b2.sort(key=lambda x: (x[0], x[2]))
     lignes_b2 = [["Date", "Libellé opération", "Détail", "Débit", "Crédit", "N° opération"]]

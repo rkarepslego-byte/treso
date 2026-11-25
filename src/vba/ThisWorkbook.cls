@@ -19,4 +19,6 @@ Private Sub Workbook_Open()
     ' Ces réglages techniques ne doivent pas provoquer de demande d'enregistrement à la fermeture
     Me.Saved = etaitEnregistre
     modAdmin.VerifierInstallation
+    ' Proposition d'actualisation si de nouveaux relevés ont été déposés (après la fin de l'ouverture)
+    Application.OnTime Now + TimeSerial(0, 0, 2), "ProposerActualisation"
 End Sub

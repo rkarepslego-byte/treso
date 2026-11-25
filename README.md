@@ -45,6 +45,9 @@ bancaire**, rapprochement automatique, soldes réels et prévisionnels jour par 
   certaines (validation en un clic, automatique en option), incertaines (choix manuel obligatoire),
   opérations non prévues à traiter (catégorie, commentaire, virement interne, rapprochement manuel,
   création de charge récurrente). Rapprochements conservés entre deux actualisations.
+* **Automatisations** : règles apprises des traitements manuels (frais, abonnements… classés tout
+  seuls), virements internes non prévus détectés, suggestion de prévision proche, alertes de
+  trésorerie (banque négative, seuil global), actualisation proposée à l'ouverture si nouveaux relevés.
 * **Sécurité** : sauvegarde avant chaque actualisation, journal bancaire jamais vidé, feuilles protégées,
   onglets techniques masqués, messages d'erreur en français.
 
