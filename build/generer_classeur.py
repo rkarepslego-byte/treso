@@ -351,6 +351,8 @@ class Generateur:
             "Virements_Auto": "Oui" if self.etat.params.virements_auto else "Non",
             "Seuil_Alerte": self.etat.params.seuil_alerte,
         }
+        if getattr(self.etat, "societe", ""):
+            valeurs["Societe"] = self.etat.societe
         if getattr(self.etat, "date_calcul_fixe", False):
             valeurs["Date_Ref_Saisie"] = self.etat.params.date_ref
         ligne = 4
@@ -387,7 +389,7 @@ class Generateur:
         ws.set_column(7, 7, 3)
         ws.write(3, 5, "Catégories", self.f["gras"])
         ws.write(3, 8, "Règles automatiques (mot-clé du libellé bancaire -> catégorie, action)", self.f["gras"])
-        cats = [[c, t] for c, t in S.CATEGORIES_DEFAUT] + [[None, None]] * 28
+        cats = [[c, t] for c, t in (getattr(self.etat, "categories", None) or S.CATEGORIES_DEFAUT)] + [[None, None]] * 28
         self.ecrire_table(ws, S.CATEGORIES, cats)
         source = self.etat.regles or [m.Regle(k, c, a) for k, c, a in S.REGLES_DEFAUT]
         regles = [[r.mot_cle, r.categorie, r.action or None] for r in source] + [[None, None, None]] * 30

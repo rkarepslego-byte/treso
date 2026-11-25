@@ -310,14 +310,14 @@ PARAMETRES = [
         ("Societe", "Nom de la société", "Société Exemple SAS", None, "Affiché en titre du tableau de bord."),
     ]),
     ("Banque 1", [
-        ("B1_Nom", "Nom de la banque", "Banque Alpha", None, "Nom affiché partout dans l'outil."),
+        ("B1_Nom", "Nom de la banque", "BPGO", None, "Nom affiché partout dans l'outil."),
         ("B1_IBAN", "IBAN / n° de compte", "FR76 0000 0000 0000 0000 0000 001", None, "Information uniquement."),
         ("B1_SoldeInit", "Solde initial", 25000, FMT_EUR, "Solde du relevé bancaire à la date ci-dessous."),
         ("B1_DateSolde", "Date du solde initial", None, FMT_DATE,
          "Le solde inclut toutes les opérations jusqu'à cette date incluse : elles ne sont pas réimportées."),
     ]),
     ("Banque 2", [
-        ("B2_Nom", "Nom de la banque", "Banque Beta", None, "Nom affiché partout dans l'outil."),
+        ("B2_Nom", "Nom de la banque", "CIC", None, "Nom affiché partout dans l'outil."),
         ("B2_IBAN", "IBAN / n° de compte", "FR76 0000 0000 0000 0000 0000 002", None, "Information uniquement."),
         ("B2_SoldeInit", "Solde initial", 8000, FMT_EUR, "Solde du relevé bancaire à la date ci-dessous."),
         ("B2_DateSolde", "Date du solde initial", None, FMT_DATE,
@@ -399,4 +399,25 @@ REGLES_DEFAUT = [
     ("FRAIS TENUE", "Frais bancaires", "Conserver comme non prévue"),
     ("COMMISSION", "Frais bancaires", "Conserver comme non prévue"),
     ("COTIS", "Frais bancaires", "Conserver comme non prévue"),
+]
+
+# Règles de départ du classeur client (catégories de l'ancien classeur : voir outils/migrer_treso.py).
+# Les règles apprises de l'historique s'y ajoutent (outils/preparer_client.py).
+REGLES_CLIENT = [
+    ("URSSAF", "Salaires et charges sociales", ""), ("MALAKOFF", "Salaires et charges sociales", ""),
+    ("HUMANIS", "Salaires et charges sociales", ""), ("HENNER", "Salaires et charges sociales", ""),
+    ("ABONDEMENT", "Salaires et charges sociales", ""), ("ACOMPTE SALAIRE", "Salaires et charges sociales", ""),
+    ("DIRECTION GENERALE", "Impôts et taxes", ""), ("DGFIP", "Impôts et taxes", ""), ("VIR SIE", "Impôts et taxes", ""),
+    ("ECHEANCE PRET", "Prêts / Leasing", ""), ("RBST PRET", "Prêts / Leasing", ""), ("LEASING", "Prêts / Leasing", ""),
+    ("CREDIPAR", "Prêts / Leasing", ""), ("BAYERISCHE MOTOREN", "Prêts / Leasing", ""),
+    ("MERCEDES BENZ", "Prêts / Leasing", ""),
+    ("BOUYGUES", "Frais généraux", ""), ("SFR BUSINESS", "Frais généraux", ""), ("ENGIE", "Frais généraux", ""),
+    ("AUTOROUTES", "Frais généraux", ""), ("IN EXTENSO", "Frais généraux", ""), ("INEXWEB", "Frais généraux", ""),
+    ("PAIEMENT CB", "Carte bancaire", ""), ("PAIEMENT PSC", "Carte bancaire", ""),
+    ("FRAIS ARRETE", "Frais bancaires", "Conserver comme non prévue"),
+    ("FRAIS RCPT", "Frais bancaires", "Conserver comme non prévue"),
+    ("COTIS RYTHMEO", "Frais bancaires", "Conserver comme non prévue"),
+    ("COMCB", "Frais bancaires", "Conserver comme non prévue"),
+    ("EURO INFORMATION", "Frais bancaires", "Conserver comme non prévue"),
+    ("INTERETS FRAIS", "Frais bancaires", "Conserver comme non prévue"),
 ]

@@ -19,15 +19,17 @@ def ecrire(tmp_path, nom, texte, encodage="utf-8"):
 
 def test_formats_de_demonstration_retrouves(tmp_path):
     construire(str(tmp_path))
-    r1 = analyser(str(tmp_path / "Imports" / "Banque1" / "releve_alpha_partie1.csv"))
-    r2 = analyser(str(tmp_path / "Imports" / "Banque2" / "releve_beta.xlsx"))
+    r1 = analyser(str(tmp_path / "Imports" / "Banque1" / "operations_partie1.csv"))
+    r2 = analyser(str(tmp_path / "Imports" / "Banque2" / "comptes_1.xlsx"))
     for cle in ("Separateur", "Encodage", "LignesIgnorees", "ColDate", "ColDateValeur", "FormatDate", "ColsLibelle",
-                "ModeMontant", "ColMontant", "SeparateurDecimal"):
+                "ModeMontant", "ColMontant", "ColDebit", "ColCredit", "SeparateurDecimal", "ColReference"):
         assert str(r1["params"][cle]) == str(FORMAT_B1[cle]), cle
-    for cle in ("LignesIgnorees", "ColDate", "ColsLibelle", "ModeMontant", "ColDebit", "ColCredit", "ColReference"):
+    for cle in ("LignesIgnorees", "Feuille", "ColDate", "ColsLibelle", "ModeMontant", "ColDebit", "ColCredit", "ColReference"):
         assert str(r2["params"][cle]) == str(FORMAT_B2[cle]), cle
     assert r1["controle"]["nb_lignes"] >= 5 and not r1["controle"]["erreur"]
-    assert r2["controle"]["nb_lignes"] == r2["controle"]["nb_lignes_donnees"]
+    assert r2["controle"]["nb_lignes"] >= 5 and not r2["controle"]["erreur"]
+    # seules les lignes de pied (« Solde au … », « Liste de vos comptes ») sont écartées
+    assert len(r2["controle"]["lignes_ecartees"]) == 2
 
 
 def test_csv_utf8_virgule_point_decimal(tmp_path):

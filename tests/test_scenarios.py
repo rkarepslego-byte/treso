@@ -11,7 +11,7 @@ import pytest
 from reference import moteur as m
 from reference.formats import FORMAT_B1, FORMAT_B2, vers_parametres_moteur
 
-B1, B2 = "Banque Alpha", "Banque Beta"
+B1, B2 = "BPGO", "CIC"
 REF = date(2026, 11, 25)
 P_B1 = vers_parametres_moteur(FORMAT_B1, B1)
 P_B2 = vers_parametres_moteur(FORMAT_B2, B2)
@@ -36,21 +36,44 @@ def prev(etat, d, banque, libelle, montant, type_=m.TYPE_DEPENSE, categorie="Div
 
 
 def csv_b1(lignes):
-    """Construit un relevé au format démo Banque 1 (lignes brutes CSV)."""
-    rows = [["BANQUE ALPHA - Export des opérations"], ["Compte courant n° 0001234567"],
-            ["Période du 01/11/2026 au 30/11/2026"],
-            ["Date opération", "Date valeur", "Libellé", "Montant (EUR)"]]
-    for d, lib, mt in lignes:
-        rows.append([d, d, lib, mt])
-    rows.append(["", "", "Solde au 30/11/2026", "12 345,67"])  # ligne de pied à ignorer
+    """Construit un relevé au format réel BPGO (lignes brutes CSV) : (date, libellé, montant[, infos[, référence]])."""
+    rows = [["Code de la banque : 13807", "Code de l'agence : 00000", "Date de début de téléchargement : 01/11/2026",
+             "Date de fin de téléchargement : 30/11/2026"],
+            ["Numéro de compte : 00000000000", "Nom du compte : Compte Courant", "Devise : EUR"],
+            [],
+            ["Solde en fin de période", "", "", "12345,67"],
+            ["Date comptable", "Libelle simplifie", "Reference", "Informations complementaires", "Type operation",
+             "Debit", "Credit", "Date operation", "Date de valeur", "Pointage"]]
+    for l in lignes:
+        d, lib, mt = l[0], l[1], l[2]
+        info = l[3] if len(l) > 3 else ""
+        ref = l[4] if len(l) > 4 else ""
+        brut = mt.replace(" ", "")
+        debit = brut if brut.startswith("-") else ""
+        credit = "" if debit else ("+" + brut.lstrip("+"))
+        rows.append([d, lib, ref, info, "Virement", debit, credit, d, d, "Non"])
+    rows.append(["Solde en début de période", "", "", "1000,00"])  # ligne de pied à ignorer
     return rows
 
 
 def xlsx_b2(lignes):
-    """Construit un relevé au format démo Banque 2 (lignes brutes Excel)."""
-    rows = [["Date", "Libellé opération", "Détail", "Débit", "Crédit", "N° opération"]]
-    for d, lib, det, deb, cre, ref in lignes:
-        rows.append([d, lib, det, deb, cre, ref])
+    """Construit un relevé au format réel CIC (onglet du compte) : (date, libellé, détail, débit, crédit, réf.).
+
+    Le CIC n'exporte ni référence ni détail séparé : le détail est accolé au libellé, la référence ignorée.
+    """
+    rows = [["Situation de votre compte C/C Contrat Pro Global EXEMPLE (EUR) au 30/11/2026"],
+            ["R.I.B. : 00000 00000 00000000000"],
+            [None, None, None, "Solde initial : ", None, None, "EUR"],
+            ["Liste de vos comptes"],
+            ["Date", "Valeur", "Libellé", "Débit", "Crédit", "Solde", "Dev"]]
+    for d, lib, det, deb, cre, _ref in lignes:
+        libelle = " ".join(x for x in (lib, det) if x)
+        if isinstance(deb, (int, float)):
+            deb = -abs(deb)
+        elif isinstance(deb, str) and deb and not deb.startswith("-"):
+            deb = "-" + deb
+        rows.append([d, d, libelle, deb, cre, None, "EUR"])
+    rows += [[None] * 7, [None, None, None, "Solde au 30/11/2026 : ", None, 1234.5, "EUR"], ["Liste de vos comptes"]]
     return rows
 
 
@@ -81,8 +104,8 @@ def test_normalisation_formats_demo():
         (datetime(2026, 11, 4), "VIR", "Client Martin", None, "1500,00", "A002"),
     ])}, P_B2)
     assert [(l.date, l.montant, l.libelle, l.reference) for l in t2] == [
-        (date(2026, 11, 3), -89.9, "PRLV Orange Business", "A001"),
-        (date(2026, 11, 4), 1500.0, "VIR Client Martin", "A002"),
+        (date(2026, 11, 3), -89.9, "PRLV Orange Business", ""),
+        (date(2026, 11, 4), 1500.0, "VIR Client Martin", ""),
     ]
 
 
@@ -93,7 +116,7 @@ def test_fichier_au_mauvais_format_ne_bloque_pas_les_autres():
     }, P_B1)
     erreurs = [l for l in transit if l.erreur]
     assert len(erreurs) == 1 and erreurs[0].fichier == "mauvais.csv"
-    assert "Date opération" in erreurs[0].erreur
+    assert FORMAT_B1["ColDate"] in erreurs[0].erreur
     etat = nouvel_etat()
     rapport = m.importer(etat, transit, datetime(2026, 11, 25))
     assert rapport["bon.csv"]["ajoutees"] == 1
@@ -238,7 +261,7 @@ def test_s5_virement_interne_prevu():
     assert (m.solde_previsionnel(etat, B1, 30), m.solde_previsionnel(etat, B2, 30), total_prev) == (5000.00, 10000.00, 15000.00)
 
     importer_b1(etat, {"b1.csv": csv_b1([("20/11/2026", "VIR SEPA VERS BANQUE BETA", "-5 000,00")])})
-    importer_b2(etat, {"b2.xlsx": xlsx_b2([(date(2026, 11, 21), "VIR RECU", "Banque Alpha", None, 5000, "X1")])})
+    importer_b2(etat, {"b2.xlsx": xlsx_b2([(date(2026, 11, 21), "VIR BQ POP", "BPGO", None, 5000, "X1")])})
     props = m.rechercher(etat)
     assert len(props) == 2 and all(pr.niveau == m.NIVEAU_CERTAINE for pr in props)
     m.valider_certaines(etat)
@@ -250,7 +273,7 @@ def test_s5_virement_interne_prevu():
 def test_s5bis_virement_interne_non_prevu():
     etat = nouvel_etat()
     importer_b1(etat, {"b1.csv": csv_b1([("18/11/2026", "VIR SEPA VERS BANQUE BETA", "-1 000,00")])})
-    importer_b2(etat, {"b2.xlsx": xlsx_b2([(date(2026, 11, 19), "VIR RECU", "Banque Alpha", None, 1000, "X2")])})
+    importer_b2(etat, {"b2.xlsx": xlsx_b2([(date(2026, 11, 19), "VIR BQ POP", "BPGO", None, 1000, "X2")])})
     m.rechercher(etat)
     o1, o2 = m.a_traiter(etat)
     assert m.suggestion_virement(etat, o1) == o2.id

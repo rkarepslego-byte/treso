@@ -1,15 +1,8 @@
-"""Paramètres d'import des formats de DÉMONSTRATION.
+"""Paramètres d'import des deux banques (table tbl_ParamImport, onglet masqué Param_Import).
 
-Ces paramètres décrivent les deux formats fictifs livrés en attendant les vrais exports :
-
-* Banque 1 : CSV séparateur « ; », encodage Windows-1252, 3 lignes d'en-tête de banque,
-  une colonne « Montant » signée au format français (1 234,56).
-* Banque 2 : classeur Excel .xlsx, colonnes Débit / Crédit séparées (débits positifs),
-  libellé réparti sur deux colonnes.
-
-Les mêmes valeurs alimentent la table tbl_ParamImport du classeur (onglet masqué
-Param_Import). Quand les vrais exports seront fournis, seule cette table (et au besoin
-la fonction Power Query fnNormaliserReleve) devra être adaptée.
+Les valeurs ci-dessous correspondent aux exports réels du client (BPGO et CIC). En cas de
+changement de format par une banque, seule la table tbl_ParamImport du classeur doit être
+adaptée (aide : python -m outils.analyser_releve fichier).
 """
 
 # Ordre et libellés des paramètres tels qu'affichés dans tbl_ParamImport
@@ -35,39 +28,46 @@ PARAMETRES_IMPORT = [
     ("ColReference", "Colonne référence", "Facultatif : n° d'opération unique fourni par la banque"),
 ]
 
+# Formats RÉELS des exports du client (analysés le 25/11/2026 avec outils/analyser_releve.py) :
+# * Banque 1 = BPGO (Banque Populaire Grand Ouest) : CSV « ; » Windows-1252, 4 lignes de présentation
+#   (code banque / compte / ligne vide / solde de fin de période), débits négatifs et crédits « +… »
+#   dans deux colonnes, référence d'opération, pied « Solde en début de période ».
+# * Banque 2 = CIC : classeur .xlsx « comptes_N.xlsx » ; 1er onglet = récapitulatif des comptes,
+#   opérations du compte courant dans l'onglet « Cpt 14270 00020886002 » (4 lignes de présentation,
+#   débits négatifs / crédits positifs), pied « Solde au … ».
 FORMAT_B1 = {
     "Code": "B1",
     "Extensions": "csv;txt",
     "Separateur": ";",
     "Encodage": 1252,
-    "LignesIgnorees": 3,
+    "LignesIgnorees": 4,
     "Feuille": "",
-    "ColDate": "Date opération",
-    "ColDateValeur": "Date valeur",
+    "ColDate": "Date comptable",
+    "ColDateValeur": "Date de valeur",
     "FormatDate": "dd/MM/yyyy",
-    "ColsLibelle": "Libellé",
-    "ModeMontant": "Montant signé",
-    "ColMontant": "Montant (EUR)",
-    "ColDebit": "",
-    "ColCredit": "",
+    "ColsLibelle": "Libelle simplifie;Informations complementaires",
+    "ModeMontant": "Débit/Crédit",
+    "ColMontant": "",
+    "ColDebit": "Debit",
+    "ColCredit": "Credit",
     "ColSens": "",
     "ValeursDebit": "D;DEBIT",
     "InverserSigne": "Non",
     "SeparateurDecimal": ",",
-    "ColReference": "",
+    "ColReference": "Reference",
 }
 
 FORMAT_B2 = {
     "Code": "B2",
-    "Extensions": "xlsx;xls;csv",
+    "Extensions": "xlsx;xls",
     "Separateur": ";",
-    "Encodage": 65001,
-    "LignesIgnorees": 0,
-    "Feuille": "",
+    "Encodage": 1252,
+    "LignesIgnorees": 4,
+    "Feuille": "Cpt 14270 00020886002",
     "ColDate": "Date",
-    "ColDateValeur": "",
+    "ColDateValeur": "Valeur",
     "FormatDate": "dd/MM/yyyy",
-    "ColsLibelle": "Libellé opération;Détail",
+    "ColsLibelle": "Libellé",
     "ModeMontant": "Débit/Crédit",
     "ColMontant": "",
     "ColDebit": "Débit",
@@ -76,7 +76,7 @@ FORMAT_B2 = {
     "ValeursDebit": "D;DEBIT",
     "InverserSigne": "Non",
     "SeparateurDecimal": ",",
-    "ColReference": "N° opération",
+    "ColReference": "",
 }
 
 

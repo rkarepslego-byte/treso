@@ -1,0 +1,13 @@
+Code de la banque : 13807;Code de l'agence : 00000;Date de début de téléchargement : 18/10/2026;Date de fin de téléchargement : 13/11/2026
+Numéro de compte : 00000000000;Nom du compte : Compte Courant;Devise : EUR
+
+Solde en fin de période;;;24770,20
+Date comptable;Libelle simplifie;Reference;Informations complementaires;Type operation;Debit;Credit;Date operation;Date de valeur;Pointage
+12/11/2026;CB RESTAURANT LE MARAIS;;;Paiement CB;-86,40;;12/11/2026;12/11/2026;Non
+11/11/2026;VIR VERS CIC APPRO;06A5359;;Remise virement;-2000,00;;11/11/2026;11/11/2026;Non
+09/11/2026;FRAIS TENUE DE COMPTE;19A04AB;;Frais et extournes;-18,50;;09/11/2026;09/11/2026;Non
+06/11/2026;PRLV SEPA SCI LES TILLEULS;4633142;LOYER BUREAUX;Prelevement SDD;-2400,00;;06/11/2026;06/11/2026;Non
+05/11/2026;CB AMAZON EU SARL;;;Paiement CB;-149,90;;05/11/2026;05/11/2026;Non
+27/10/2026;VIR SALAIRES DU MOIS;2FFAEC1;Virement de Societe Exemple;Remise virement;-18500,00;;27/10/2026;27/10/2026;Non
+21/10/2026;PRLV SEPA ANCIEN PRELEVEMENT DEJA DANS LE SOLDE;45F423D;;Prelevement SDD;-75,00;;21/10/2026;21/10/2026;Non
+Solde en début de période;;;48000,00

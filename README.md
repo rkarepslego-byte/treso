@@ -4,9 +4,11 @@ Outil de trésorerie pour une entreprise disposant de **deux comptes bancaires**
 prévisions, charges fixes récurrentes, import des relevés bancaires (CSV / Excel) **sans connexion
 bancaire**, rapprochement automatique, soldes réels et prévisionnels jour par jour.
 
-> Version 1.0 — première version fonctionnelle sur **données fictives**. Les formats d'import sont
-> paramétrables et seront ajustés quand les vrais exports des deux banques seront fournis
-> (voir [guide technique § 3.4](docs/03_Guide_technique.md#34-import-bancaire-power-query)).
+> Version 1.1 — formats d'import **réglés sur les exports réels des deux banques du client**
+> (BPGO : CSV ; CIC : classeur Excel). Le classeur de démonstration (`dist/`) contient des données
+> fictives à ces formats ; le classeur du client, avec ses soldes, charges fixes et règles repris de
+> ses fichiers, est produit par [`outils/preparer_client.py`](outils/preparer_client.py) hors du dépôt
+> (voir [guide technique § 3.8](docs/03_Guide_technique.md#38-mise-en-service-chez-le-client)).
 
 ## Livrables
 

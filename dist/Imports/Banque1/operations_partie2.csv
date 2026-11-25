@@ -1,0 +1,16 @@
+Code de la banque : 13807;Code de l'agence : 00000;Date de début de téléchargement : 05/11/2026;Date de fin de téléchargement : 24/11/2026
+Numéro de compte : 00000000000;Nom du compte : Compte Courant;Devise : EUR
+
+Solde en fin de période;;;40795,20
+Date comptable;Libelle simplifie;Reference;Informations complementaires;Type operation;Debit;Credit;Date operation;Date de valeur;Pointage
+23/11/2026;VIR INST CLIENT MOREL;5071EB8;;Virement;;+3500,00;23/11/2026;23/11/2026;Non
+21/11/2026;VIR VERS CIC TRESORERIE;0A6AC48;;Remise virement;-10000,00;;21/11/2026;21/11/2026;Non
+20/11/2026;VIR LEMOINE IMPRESSION;DE31377;Virement de Societe Exemple;Remise virement;-1850,00;;20/11/2026;20/11/2026;Non
+17/11/2026;PRLV SEPA URSSAF PAYS DE LOIRE;849E70E;;Prelevement SDD;-6200,00;;17/11/2026;17/11/2026;Non
+16/11/2026;VIR INST DUPONT ET FILS;25C2903;FACT F2026-118;Virement;;+12000,00;16/11/2026;16/11/2026;Non
+12/11/2026;CB RESTAURANT LE MARAIS;;;Paiement CB;-86,40;;12/11/2026;12/11/2026;Non
+11/11/2026;VIR VERS CIC APPRO;06A5359;;Remise virement;-2000,00;;11/11/2026;11/11/2026;Non
+09/11/2026;FRAIS TENUE DE COMPTE;19A04AB;;Frais et extournes;-18,50;;09/11/2026;09/11/2026;Non
+06/11/2026;PRLV SEPA SCI LES TILLEULS;4633142;LOYER BUREAUX;Prelevement SDD;-2400,00;;06/11/2026;06/11/2026;Non
+05/11/2026;CB AMAZON EU SARL;;;Paiement CB;-149,90;;05/11/2026;05/11/2026;Non
+Solde en début de période;;;48000,00

@@ -220,8 +220,8 @@ def test_import_de_previsions(env):
     wb = xlsxwriter.Workbook(chemin)
     ws = wb.add_worksheet()
     lignes = [["Prévisionnel"], [], ["Échéance", "Intitulé", "Rubrique", "Compte", "Dépenses", "Recettes"],
-              [date(2026, 12, 18), "Prime annuelle", "Salaires", "Banque Alpha", 4000, None],
-              [date(2027, 1, 12), "Subvention région", "Subventions", "beta", None, 7500],
+              [date(2026, 12, 18), "Prime annuelle", "Salaires", "BPGO", 4000, None],
+              [date(2027, 1, 12), "Subvention région", "Subventions", "cic", None, 7500],
               [date(2026, 10, 1), "Trop ancien", "Divers", "", 10, None]]
     fdate = wb.add_format({"num_format": "dd/mm/yyyy"})
     for i, l in enumerate(lignes):
@@ -307,7 +307,7 @@ def test_macros_de_saisie_et_d_administration(env):
 
     # Nouveaux relevés : aucun après l'actualisation, un après dépôt d'un fichier
     assert interp.appeler("NouveauxReleves") == 0
-    src = os.path.join(racine, "Imports", "Banque1", "releve_alpha_partie2.csv")
+    src = os.path.join(racine, "Imports", "Banque1", "operations_partie2.csv")
     with open(src, "rb") as f:
         contenu = f.read()
     with open(os.path.join(racine, "Imports", "Banque1", "releve_decembre.csv"), "wb") as f:

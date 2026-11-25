@@ -11,9 +11,9 @@ def test_colonnes_reconnues_et_import():
         ["Prévisionnel de trésorerie 2026"],
         [],
         ["Échéance", "Intitulé", "Rubrique", "Compte", "Dépenses", "Recettes", "Remarques"],
-        [datetime(2026, 12, 5), "Loyer", "Loyer", "Banque Alpha", 2400, None, ""],
-        ["15/12/2026", "Facture client X", "Ventes", "beta", None, "5 000,00", "relancer"],
-        [date(2026, 10, 15), "Ancien", "Divers", "Banque Alpha", 50, None, ""],   # antérieure au solde initial
+        [datetime(2026, 12, 5), "Loyer", "Loyer", "BPGO", 2400, None, ""],
+        ["15/12/2026", "Facture client X", "Ventes", "cic", None, "5 000,00", "relancer"],
+        [date(2026, 10, 15), "Ancien", "Divers", "BPGO", 50, None, ""],   # antérieure au solde initial
         ["TOTAL", None, None, None, 2450, 5000, None],                              # ligne ignorée
     ]
     roles = m.detecter_colonnes_previsions(lignes[2])

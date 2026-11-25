@@ -34,7 +34,7 @@ from reference.formats import PARAMETRES_IMPORT, vers_parametres_moteur  # noqa:
 
 SEPARATEURS = [";", ",", "\t", "|"]
 MOTS_ENTETE = ("DATE", "LIBELLE", "MONTANT", "DEBIT", "CREDIT", "VALEUR", "OPERATION", "REFERENCE",
-               "DETAIL", "SENS", "DESCRIPTION", "INTITULE", "AMOUNT", "SOLDE")
+               "DETAIL", "SENS", "DESCRIPTION", "INTITULE", "AMOUNT", "SOLDE", "COMPTABLE")
 RE_DATES = [
     (re.compile(r"^\d{1,2}/\d{1,2}/\d{4}$"), "dd/MM/yyyy"),
     (re.compile(r"^\d{1,2}/\d{1,2}/\d{2}$"), "dd/MM/yy"),
@@ -84,10 +84,20 @@ def lire_brut(chemin: str) -> tuple[list[list], dict]:
     if ext in (".xlsx", ".xlsm"):
         import openpyxl
         wb = openpyxl.load_workbook(chemin, data_only=True, read_only=True)
-        ws = wb.worksheets[0]
-        lignes = [list(r) for r in ws.iter_rows(values_only=True)]
+        retenue = None
+        for k, ws in enumerate(wb.worksheets):
+            if ws.sheet_state != "visible":
+                continue
+            lignes = [list(r) for r in ws.iter_rows(values_only=True)]
+            col = detecter_colonnes([("" if h is None else str(h)) for h in lignes[detecter_entete(lignes)]]) if lignes else {}
+            if col.get("date") is not None and (col.get("montant") is not None or col.get("debit") is not None):
+                retenue = (lignes, ws.title if k > 0 else "")
+                break
+        if retenue is None:
+            retenue = ([list(r) for r in wb.worksheets[0].iter_rows(values_only=True)], "")
         wb.close()
-        return lignes, infos
+        infos["Feuille"] = retenue[1]
+        return retenue[0], infos
     raise ValueError(f"Format non pris en charge par l'analyse : {ext} (convertir en .xlsx ou .csv)")
 
 
@@ -120,10 +130,13 @@ def _colonne(entetes: list[str], inclure, exclure=()) -> list[int]:
 def detecter_colonnes(entetes: list[str]) -> dict:
     c = {}
     dates = _colonne(entetes, ["DATE"], exclure=["VALEUR"])
+    # Date comptable (date de passage en compte, celle qui fait le solde) en priorité, puis date d'opération
+    compta = [i for i in dates if "COMPTABLE" in _norm(entetes[i])]
     pref = [i for i in dates if "OPERATION" in _norm(entetes[i]) or _norm(entetes[i]) == "DATE"]
-    c["date"] = (pref or dates or [None])[0]
+    c["date"] = (compta or pref or dates or [None])[0]
     c["date_valeur"] = (_colonne(entetes, ["VALEUR"]) or [None])[0]
-    c["libelles"] = _colonne(entetes, ["LIBELLE", "DETAIL", "DESCRIPTION", "INTITULE", "MOTIF", "NATURE"],
+    c["libelles"] = _colonne(entetes, ["LIBELLE", "DETAIL", "DESCRIPTION", "INTITULE", "MOTIF", "NATURE",
+                                        "INFORMATIONS", "COMPLEMENTAIRES"],
                              exclure=["DATE"])
     c["debit"] = (_colonne(entetes, ["DEBIT", "DEBITS"], exclure=["DATE"]) or [None])[0]
     c["credit"] = (_colonne(entetes, ["CREDIT", "CREDITS"], exclure=["DATE"]) or [None])[0]

@@ -80,9 +80,11 @@ Pour arrêter une charge : Actif = « Non » ou date de fin.
 
 ## 3. Déposer les relevés bancaires
 
-1. Sur le site de chaque banque, exporter les opérations au format **CSV ou Excel**.
-2. Enregistrer le fichier dans le dossier **Imports\Banque1** (ou **Imports\Banque2**) situé à côté
-   du classeur.
+1. Sur le site de chaque banque, exporter les opérations :
+   * **BPGO** : export des opérations au format **CSV** (fichier `operations_….csv`) ;
+   * **CIC** : export au format **Excel** (fichier `comptes_….xlsx`).
+2. Enregistrer le fichier dans le dossier **Imports\Banque1** (BPGO) ou **Imports\Banque2** (CIC)
+   situé à côté du classeur, sans l'ouvrir ni le modifier.
 
 Inutile de supprimer les anciens relevés ni de faire attention aux périodes : **une opération déjà
 importée n'est jamais ajoutée une seconde fois**, même si deux relevés se chevauchent. Deux paiements

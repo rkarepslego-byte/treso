@@ -108,7 +108,21 @@ Requêtes (sources dans `src/powerquery/`) :
 | `fnImporterBanque` | **un dossier** → table de transit, occurrence, clé technique, erreurs par fichier |
 | `Import_Banque1` / `Import_Banque2` | `fnImporterBanque(Parametres_Import[BanqueN])`, chargées dans `tbl_Stage_B1/B2` |
 
-### Adapter un vrai format d'export (quand les fichiers des banques seront fournis)
+### Formats configurés (exports réels du client, analysés le 25/11/2026)
+
+| | Banque 1 = BPGO | Banque 2 = CIC |
+|---|---|---|
+| Fichier | `operations_JJMMAAAA_JJMMAAAA.csv` (« ; », Windows-1252) | `comptes_N.xlsx` |
+| Présentation | 4 lignes (banque/agence, compte, vide, solde de fin) ; pied « Solde en début de période » | onglet récapitulatif « Vos comptes » puis onglet du compte `Cpt 14270 00020886002` (4 lignes de titre) ; pied « Solde au … » |
+| Date | `Date comptable` (date qui fait le solde) | `Date` |
+| Libellé | `Libelle simplifie` + `Informations complementaires` | `Libellé` |
+| Montant | `Debit` (« -1234,56 ») / `Credit` (« +1234,56 ») | `Débit` (négatif) / `Crédit` |
+| Référence | `Reference` (vide pour la carte bancaire) | aucune |
+
+Les lignes de pied (soldes) sont écartées automatiquement (sans date ou sans montant). Si le CIC
+renomme l'onglet du compte (autre compte exporté), corriger le paramètre **Feuille Excel**.
+
+### Adapter un autre format d'export
 
 0. **Analyse automatique** (poste de développement) :
    ```
@@ -126,12 +140,12 @@ Requêtes (sources dans `src/powerquery/`) :
 | Extensions acceptées | `csv;txt` | |
 | Séparateur CSV | `;` `,` ou `TAB` | |
 | Encodage CSV | `1252` (Windows) / `65001` (UTF-8) | accents illisibles → changer l'encodage |
-| Lignes à ignorer avant l'en-tête | `3` | lignes « Compte n°… », « Période… » |
-| Feuille Excel | vide = 1re feuille | |
-| Colonne date d'opération | `Date opération` | casse, accents et espaces indifférents |
+| Lignes à ignorer avant l'en-tête | `4` | lignes « Code de la banque… », « Numéro de compte… » |
+| Feuille Excel | vide = 1re feuille | ex. `Cpt 14270 00020886002` (CIC) |
+| Colonne date d'opération | `Date comptable` | casse, accents et espaces indifférents |
 | Colonne date de valeur | facultatif | |
 | Format de date | `dd/MM/yyyy`, `dd/MM/yy`, `yyyy-MM-dd` | si les dates sont du texte |
-| Colonnes libellé | `Libellé;Détail` | plusieurs colonnes concaténées |
+| Colonnes libellé | `Libelle simplifie;Informations complementaires` | plusieurs colonnes concaténées |
 | Mode montant | `Montant signé` / `Débit/Crédit` / `Montant + Sens` | |
 | Colonne montant / débit / crédit / sens | | selon le mode |
 | Valeurs signifiant un débit | `D;DEBIT` | mode Montant + Sens |
@@ -140,7 +154,7 @@ Requêtes (sources dans `src/powerquery/`) :
 | Colonne référence | facultatif | n° d'opération unique : renforce la clé anti-doublon |
 
 2. Déposer un relevé réel dans le dossier et cliquer **Actualiser les banques**. Un fichier
-   incompatible produit un message explicite (« La colonne « Date opération » est absente du fichier
+   incompatible produit un message explicite (« La colonne « Date comptable » est absente du fichier
    X. Colonnes trouvées : … ») sans bloquer l'autre banque ni modifier les données existantes.
 3. Si un format sort du cadre de ces paramètres (en-têtes sur deux lignes, montants dans une colonne
    texte composite…), adapter la fonction `fnNormaliserReleve` (Données > Requêtes et connexions),
@@ -255,6 +269,34 @@ VBA, puis `Admin_ProtegerFeuilles`).
 
 ## 3.8 Mise en service chez le client
 
+### Classeur prérempli à partir des fichiers du client (recommandé)
+
+```
+python -m outils.preparer_client --bpgo operations.csv --cic comptes_8.xlsx --ancien TRESO_2025.xlsx ^
+    --onglet DEC26 --annee 2026 --mois 12 --depart 2026-11-24 --societe "Nom" --sortie client
+```
+
+* **Soldes de départ** : solde de fin de chaque export, ramené au soir de `--depart` (les opérations
+  postérieures restent dans les relevés et seront importées à la première actualisation).
+* **Charges fixes** reprises de l'onglet mensuel de l'ancien classeur (`outils/migrer_treso.py` :
+  lignes avec périodicité et dépense récurrente, codes de catégorie CLT, CB, FOUR, FG, PRÊT/LOA, SAL,
+  INT, BQ, IMP, DIV), puis **calées sur l'historique bancaire** : prochaine échéance après la date de
+  départ ; mois réel des charges trimestrielles / annuelles d'après le dernier paiement trouvé ;
+  passage en mensuelle si la banque prélève chaque mois ; doublon probable (montant et jour voisins
+  d'une autre ligne déjà reconnue au centime) désactivé ; ligne de salaires globale remplacée par
+  **un salaire par personne** si les virements nominatifs d'un même jour totalisent exactement son
+  montant (rapprochement 1 pour 1 fiable).
+* **Catégories** de l'ancien classeur ; **règles** : `REGLES_CLIENT` (`build/schema.py`) + règles
+  apprises des tiers de l'ancien classeur et des libellés bancaires des charges, conservées seulement
+  si elles reconnaissent au moins une opération réelle et aucune déjà couverte par une règle de départ.
+* Sortie : `Tresorerie.xlsm`, `Imports\Banque1|2` (copies des exports), `rapport_reprise.txt`
+  (charges, remarques de calage à vérifier, lignes non reprises, règles, **simulation de la première
+  actualisation** par le moteur de référence).
+* Le dossier de sortie contient des données réelles : `client/` est exclu du dépôt (`.gitignore`).
+  Test sur données fictives : `tests/test_preparer_client.py`.
+
+### Mise en service manuelle
+
 1. Installer (docs/01_Installation.md) et passer la recette (`install\Recette.cmd`).
 2. `Admin_ViderDonnees`.
 3. Paramètres : société, banques, **soldes initiaux = solde du dernier relevé, date = date de ce
@@ -283,6 +325,8 @@ python -m pytest tests                                    # tests (LibreOffice r
   relie les tables de transit (connexions, queryTables) ;
 * `build/donnees_demo.py` : jeu de données fictif et relevés de démonstration ;
 * `outils/analyser_releve.py` : analyse d'un export bancaire réel et proposition des paramètres d'import ;
+* `outils/migrer_treso.py`, `outils/preparer_client.py` : reprise de l'ancien classeur et préparation du
+  classeur du client (§ 3.8) ;
 * `reference/moteur.py` : **moteur de référence** Python, miroir exact du VBA / Power Query /
   formules, qui sert de spécification exécutable.
 
