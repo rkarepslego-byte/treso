@@ -151,7 +151,7 @@ Public Sub AjouterOperation()
         End If
     End If
     If msgErr <> "" Then
-        MsgBox "L'opération n'a pas été ajoutée :" & vbCrLf & vbCrLf & msgErr, vbExclamation, "Saisie"
+        Afficher "L'opération n'a pas été ajoutée :" & vbCrLf & vbCrLf & msgErr, vbExclamation, "Saisie"
         Exit Sub
     End If
 
@@ -229,7 +229,7 @@ Public Sub ValiderSaisies()
     CompleterSaisiesInterne
     FinTraitement
     Application.Calculate
-    MsgBox "Les lignes saisies ont été complétées (identifiants, valeurs par défaut).", vbInformation, "Saisie"
+    Afficher "Les lignes saisies ont été complétées (identifiants, valeurs par défaut).", vbInformation, "Saisie"
     Exit Sub
 Erreur:
     msgErr = Err.Description
@@ -257,14 +257,14 @@ Public Sub SupprimerLigne()
     id = Texte(dP(r, C(cP, "ID")))
 
     If Texte(dP(r, C(cP, "Statut"))) = P_POINTE Then
-        MsgBox "La prévision " & id & " est pointée avec une opération bancaire." & vbCrLf & _
+        Afficher "La prévision " & id & " est pointée avec une opération bancaire." & vbCrLf & _
                "Annulez d'abord le rapprochement (bouton « Annuler le rapprochement »).", vbExclamation, "Suppression"
         Exit Sub
     End If
 
     DebutTraitement
     If Texte(dP(r, C(cP, "Origine"))) = ORI_CHARGE Then
-        rep = MsgBox("Cette échéance provient de la charge fixe " & Texte(dP(r, C(cP, "Réf charge"))) & "." & vbCrLf & _
+        rep = Afficher("Cette échéance provient de la charge fixe " & Texte(dP(r, C(cP, "Réf charge"))) & "." & vbCrLf & _
                      "Elle va être marquée « Annulé » (elle ne sera pas recréée)." & vbCrLf & vbCrLf & _
                      "Pour arrêter toute la série, modifiez la charge fixe (Actif = Non ou date de fin).", _
                      vbOKCancel + vbQuestion, "Suppression")
@@ -290,14 +290,14 @@ Public Sub SupprimerLigne()
         If rLien > 0 Then
             If Texte(dP(rLien, C(cP, "Statut"))) = P_POINTE Then
                 FinTraitement
-                MsgBox "La contrepartie " & lien & " de ce virement est pointée : annulez d'abord son rapprochement.", vbExclamation, "Suppression"
+                Afficher "La contrepartie " & lien & " de ce virement est pointée : annulez d'abord son rapprochement.", vbExclamation, "Suppression"
                 Exit Sub
             End If
             garder(rLien) = False
         End If
-        rep = MsgBox("Supprimer le virement interne " & id & " et sa contrepartie " & lien & " ?", vbOKCancel + vbQuestion, "Suppression")
+        rep = Afficher("Supprimer le virement interne " & id & " et sa contrepartie " & lien & " ?", vbOKCancel + vbQuestion, "Suppression")
     Else
-        rep = MsgBox("Supprimer définitivement la prévision " & id & " (" & Texte(dP(r, C(cP, "Libellé"))) & ") ?", _
+        rep = Afficher("Supprimer définitivement la prévision " & id & " (" & Texte(dP(r, C(cP, "Libellé"))) & ") ?", _
                      vbOKCancel + vbQuestion, "Suppression")
     End If
     If rep <> vbOK Then
@@ -318,7 +318,7 @@ Public Sub SupprimerLigne()
     Application.Calculate
     Exit Sub
 HorsTable:
-    MsgBox "Sélectionnez d'abord une cellule de la ligne à supprimer dans le tableau des prévisions.", vbInformation, "Suppression"
+    Afficher "Sélectionnez d'abord une cellule de la ligne à supprimer dans le tableau des prévisions.", vbInformation, "Suppression"
     Exit Sub
 Erreur:
     msgErr = Err.Description
@@ -373,7 +373,7 @@ Public Sub GenererEcheances()
     modRapprochement.RechercherInterne
     FinTraitement
     Application.Calculate
-    MsgBox "Échéances des charges fixes mises à jour." & vbCrLf & _
+    Afficher "Échéances des charges fixes mises à jour." & vbCrLf & _
            nbCreees & " échéance(s) créée(s), " & nbSupprimees & " échéance(s) future(s) supprimée(s)." & vbCrLf & vbCrLf & _
            "Les échéances passées, pointées, annulées ou modifiées à la main ne sont jamais modifiées.", _
            vbInformation, "Charges fixes"

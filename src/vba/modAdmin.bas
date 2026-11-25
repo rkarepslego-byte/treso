@@ -20,7 +20,7 @@ Private Function MotDePasseOk() As Boolean
     Dim saisie As String
     saisie = InputBox("Mot de passe administrateur :", "Administration")
     MotDePasseOk = (saisie = MOT_DE_PASSE)
-    If Not MotDePasseOk And saisie <> "" Then MsgBox "Mot de passe incorrect.", vbExclamation, "Administration"
+    If Not MotDePasseOk And saisie <> "" Then Afficher "Mot de passe incorrect.", vbExclamation, "Administration"
 End Function
 
 Public Sub Admin_AfficherOngletsTechniques()
@@ -45,7 +45,7 @@ End Sub
 Public Sub Admin_DeprotegerFeuilles()
     If Not MotDePasseOk() Then Exit Sub
     DeprotegerTout
-    MsgBox "Feuilles déprotégées. Pensez à lancer Admin_ProtegerFeuilles après vos modifications.", vbInformation, "Administration"
+    Afficher "Feuilles déprotégées. Pensez à lancer Admin_ProtegerFeuilles après vos modifications.", vbInformation, "Administration"
 End Sub
 
 Public Sub Admin_ProtegerFeuilles()
@@ -68,14 +68,14 @@ End Function
 Public Sub Admin_ReinstallerRequetes()
     Dim msgErr As String
     On Error GoTo Erreur
-    If MsgBox("Recréer les requêtes Power Query à partir du code M stocké dans l'onglet Param_Import ?" & vbCrLf & _
+    If Afficher("Recréer les requêtes Power Query à partir du code M stocké dans l'onglet Param_Import ?" & vbCrLf & _
               "(les données déjà importées dans le journal bancaire ne sont pas touchées)", _
               vbOKCancel + vbQuestion, "Administration") <> vbOK Then Exit Sub
     DebutTraitement "Installation des requêtes..."
     InstallerRequetes
     modImport.MettreAJourParametresPQ
     FinTraitement
-    MsgBox "Requêtes Power Query installées. Lancez « Actualiser les banques » depuis le tableau de bord.", vbInformation, "Administration"
+    Afficher "Requêtes Power Query installées. Lancez « Actualiser les banques » depuis le tableau de bord.", vbInformation, "Administration"
     Exit Sub
 Erreur:
     msgErr = Err.Description
@@ -155,7 +155,7 @@ End Sub
 Public Sub VerifierInstallation()
     On Error Resume Next
     If Not RequetesInstallees() Then
-        If MsgBox("Les requêtes Power Query d'import bancaire sont absentes de ce classeur." & vbCrLf & _
+        If Afficher("Les requêtes Power Query d'import bancaire sont absentes de ce classeur." & vbCrLf & _
                   "Les installer maintenant ?", vbYesNo + vbQuestion, "Trésorerie") = vbYes Then
             DebutTraitement "Installation des requêtes..."
             InstallerRequetes
@@ -191,7 +191,7 @@ Public Sub VerifierRenommageBanques()
         If precedent = "" Then
             EcrireNom CStr(code) & "_NomPrecedent", actuel
         ElseIf actuel <> precedent And actuel <> "" Then
-            If MsgBox("La banque « " & precedent & " » a été renommée en « " & actuel & " »." & vbCrLf & _
+            If Afficher("La banque « " & precedent & " » a été renommée en « " & actuel & " »." & vbCrLf & _
                       "Mettre à jour toutes les opérations, prévisions et charges existantes ?", _
                       vbYesNo + vbQuestion, "Renommage de banque") = vbYes Then
                 RemplacerBanque precedent, actuel
@@ -283,10 +283,10 @@ Public Sub Admin_VerifierIntegrite()
         End If
     Next i
     If nbPb = 0 Then
-        MsgBox "Aucune incohérence détectée (" & idsB.Count & " opérations bancaires, " & idsP.Count & " prévisions).", _
+        Afficher "Aucune incohérence détectée (" & idsB.Count & " opérations bancaires, " & idsP.Count & " prévisions).", _
                vbInformation, "Contrôle d'intégrité"
     Else
-        MsgBox nbPb & " incohérence(s) détectée(s) :" & vbCrLf & vbCrLf & rapport, vbExclamation, "Contrôle d'intégrité"
+        Afficher nbPb & " incohérence(s) détectée(s) :" & vbCrLf & vbCrLf & rapport, vbExclamation, "Contrôle d'intégrité"
     End If
 End Sub
 
@@ -321,7 +321,7 @@ Public Sub Admin_ViderDonnees()
     Next nomTable
     FinTraitement
     Application.Calculate
-    MsgBox "Données vidées. Sauvegarde préalable : " & sauvegarde & vbCrLf & vbCrLf & _
+    Afficher "Données vidées. Sauvegarde préalable : " & sauvegarde & vbCrLf & vbCrLf & _
            "Renseignez maintenant les soldes initiaux et leur date dans l'onglet Paramètres.", vbInformation, "Remise à zéro"
     Exit Sub
 Erreur:

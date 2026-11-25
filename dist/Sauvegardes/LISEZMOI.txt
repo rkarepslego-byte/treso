@@ -1,0 +1,2 @@
+﻿Copies datées du classeur créées automatiquement avant chaque actualisation.
+Le nombre de copies conservées se règle dans l'onglet Paramètres.

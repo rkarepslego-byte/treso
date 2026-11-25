@@ -31,7 +31,7 @@ Public Sub RechercherCorrespondances()
     nbATraiter = modATraiter.ConstruireListeATraiterInterne()
     FinTraitement
     Application.Calculate
-    MsgBox ResumeRecherche(nbCert, nbIncert, nbAuto, nbATraiter), vbInformation, "Rapprochement"
+    Afficher ResumeRecherche(nbCert, nbIncert, nbAuto, nbATraiter), vbInformation, "Rapprochement"
     Exit Sub
 Erreur:
     msgErr = Err.Description
@@ -61,7 +61,7 @@ Public Sub ValiderChoix()
     resultat = AppliquerChoix(dR, nR, cR)
     FinTraitement
     Application.Calculate
-    MsgBox resultat, vbInformation, "Rapprochement"
+    Afficher resultat, vbInformation, "Rapprochement"
     Exit Sub
 Erreur:
     msgErr = Err.Description
@@ -84,17 +84,17 @@ Public Sub ToutValiderCertaines()
         End If
     Next i
     If nb = 0 Then
-        MsgBox "Aucune correspondance certaine à valider.", vbInformation, "Rapprochement"
+        Afficher "Aucune correspondance certaine à valider.", vbInformation, "Rapprochement"
         Exit Sub
     End If
-    If MsgBox("Valider les " & nb & " correspondance(s) certaine(s) ?" & vbCrLf & _
+    If Afficher("Valider les " & nb & " correspondance(s) certaine(s) ?" & vbCrLf & _
               "Les correspondances incertaines ne sont jamais validées automatiquement.", _
               vbOKCancel + vbQuestion, "Rapprochement") <> vbOK Then Exit Sub
     DebutTraitement "Validation des rapprochements..."
     resultat = AppliquerChoix(dR, nR, cR)
     FinTraitement
     Application.Calculate
-    MsgBox resultat, vbInformation, "Rapprochement"
+    Afficher resultat, vbInformation, "Rapprochement"
     Exit Sub
 Erreur:
     msgErr = Err.Description
@@ -144,7 +144,7 @@ Public Sub AnnulerRapprochement()
                 If Texte(dP(i, C(cP, "ID"))) = Texte(dB(iB, C(cB, "ID prévision"))) Then iP = i
             Next i
         ElseIf statutOp = OB_NON_PREVUE Or statutOp = OB_VIREMENT Then
-            If MsgBox("L'opération " & id & " a été traitée (« " & statutOp & " »)." & vbCrLf & _
+            If Afficher("L'opération " & id & " a été traitée (« " & statutOp & " »)." & vbCrLf & _
                       "La remettre dans la liste des opérations à traiter ?", vbOKCancel + vbQuestion, "Annulation") <> vbOK Then Exit Sub
             DebutTraitement
             dB(iB, C(cB, "Statut")) = OB_A_TRAITER
@@ -156,12 +156,12 @@ Public Sub AnnulerRapprochement()
             Application.Calculate
             Exit Sub
         Else
-            MsgBox "L'opération " & id & " n'est pas rapprochée.", vbInformation, "Annulation"
+            Afficher "L'opération " & id & " n'est pas rapprochée.", vbInformation, "Annulation"
             Exit Sub
         End If
     ElseIf iP > 0 Then
         If Texte(dP(iP, C(cP, "Statut"))) <> P_POINTE Then
-            MsgBox "La prévision " & id & " n'est pas pointée.", vbInformation, "Annulation"
+            Afficher "La prévision " & id & " n'est pas pointée.", vbInformation, "Annulation"
             Exit Sub
         End If
         For i = 1 To nB
@@ -173,7 +173,7 @@ Public Sub AnnulerRapprochement()
     idPrev = "?"
     If iB > 0 Then idOp = Texte(dB(iB, C(cB, "ID")))
     If iP > 0 Then idPrev = Texte(dP(iP, C(cP, "ID")))
-    If MsgBox("Annuler le rapprochement entre l'opération " & idOp & " et la prévision " & idPrev & " ?", _
+    If Afficher("Annuler le rapprochement entre l'opération " & idOp & " et la prévision " & idPrev & " ?", _
               vbOKCancel + vbQuestion, "Annulation") <> vbOK Then Exit Sub
 
     DebutTraitement "Annulation du rapprochement..."
@@ -196,7 +196,7 @@ Public Sub AnnulerRapprochement()
     Application.Calculate
     Exit Sub
 HorsTable:
-    MsgBox "Sélectionnez d'abord une cellule de la ligne concernée dans le tableau des prévisions (onglet Saisie)" & vbCrLf & _
+    Afficher "Sélectionnez d'abord une cellule de la ligne concernée dans le tableau des prévisions (onglet Saisie)" & vbCrLf & _
            "ou dans le tableau des opérations bancaires.", vbInformation, "Annulation"
     Exit Sub
 Erreur:

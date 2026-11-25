@@ -249,16 +249,16 @@ class Generateur:
             options = {"hidden": True} if c.masquee else {}
             ws.set_column(c0 + j, c0 + j, c.largeur, fmt_cellule, options)
             if c.liste:
-                ws.data_validation(r0 + 1, c0 + j, r0 + 5000, c0 + j, {
+                ws.data_validation(r0 + 1, c0 + j, r0 + 20000, c0 + j, {
                     "validate": "list", "source": "=" + c.liste, "ignore_blank": True,
                     "error_title": "Valeur non autorisée", "error_message": "Choisissez une valeur dans la liste.",
                 })
             elif c.genre == S.SAISIE and c.fmt == S.FMT_DATE:
-                ws.data_validation(r0 + 1, c0 + j, r0 + 5000, c0 + j, {
+                ws.data_validation(r0 + 1, c0 + j, r0 + 20000, c0 + j, {
                     "validate": "date", "criteria": "between", "minimum": date(2000, 1, 1), "maximum": date(2100, 12, 31),
                     "error_title": "Date invalide", "error_message": "Saisissez une date (jj/mm/aaaa)."})
             elif c.genre == S.SAISIE and c.fmt == S.FMT_EUR:
-                ws.data_validation(r0 + 1, c0 + j, r0 + 5000, c0 + j, {
+                ws.data_validation(r0 + 1, c0 + j, r0 + 20000, c0 + j, {
                     "validate": "decimal", "criteria": "between", "minimum": -1e12, "maximum": 1e12,
                     "error_title": "Montant invalide", "error_message": "Saisissez un nombre."})
         data_sans_formules = []
@@ -270,12 +270,12 @@ class Generateur:
         ws.set_row(r0, 32)
         return r0, c0, len(donnees)
 
-    def plage_colonne(self, t: S.Table, nom_col: str, nb_lignes: int = 5000) -> str:
+    def plage_colonne(self, t: S.Table, nom_col: str, nb_lignes: int = 20000) -> str:
         j = t.col_debut + t.index(nom_col)
         r = t.ligne_entete
         return f"{xl_col_to_name(j)}{r + 1}:{xl_col_to_name(j)}{r + nb_lignes}"
 
-    def mise_en_forme_statut(self, ws, t: S.Table, nom_col: str, regles: dict, nb_lignes: int = 5000):
+    def mise_en_forme_statut(self, ws, t: S.Table, nom_col: str, regles: dict, nb_lignes: int = 20000):
         plage = self.plage_colonne(t, nom_col, nb_lignes)
         for valeur, fmt in regles.items():
             ws.conditional_format(plage, {"type": "cell", "criteria": "==", "value": f'"{valeur}"', "format": self.f[fmt]})
@@ -307,6 +307,12 @@ class Generateur:
         self.onglet_aide()
         for nom, _code, visible in S.ONGLETS:
             if visible:
+                ws = self.ws[nom]
+                ws.set_landscape()
+                ws.set_paper(9)
+                ws.fit_to_pages(1, 0)
+                ws.set_margins(0.4, 0.4, 0.5, 0.5)
+                ws.set_footer("&L&8" + nom + "&R&8Page &P / &N")
                 self.ws[nom].protect(S.MOT_DE_PASSE, {"autofilter": True, "format_columns": True, "format_rows": True,
                                                       "select_locked_cells": True, "select_unlocked_cells": True})
         self.ws[S.F_TDB].activate()
@@ -802,7 +808,8 @@ class Generateur:
         ws.set_row(1, 32)
         ws.write(2, 1, "Situation au", self.f["sous_titre"])
         ws.write_formula(2, 2, "=Date_Reference", self.fmt(font_color=GRIS, italic=True, num_format="dd/mm/yyyy", align="left"))
-        ws.write(2, 4, "Dernière actualisation :", self.f["sous_titre"])
+        ws.merge_range(2, 4, 2, 5, "Dernière actualisation :", self.f["sous_titre"])
+        ws.merge_range(2, 6, 2, 8, "", self.fmt(font_color=GRIS, italic=True, num_format="dd/mm/yyyy hh:mm", align="left"))
         ws.write_formula(2, 6, '=IF(DernierImport="","jamais",DernierImport)',
                          self.fmt(font_color=GRIS, italic=True, num_format="dd/mm/yyyy hh:mm", align="left"))
         # Boutons
@@ -826,16 +833,23 @@ class Generateur:
 
         ws.merge_range(12, 1, 12, 9, "", self.f["section"])
         ws.write_formula(12, 1, '="SOLDES PRÉVISIONNELS À J+"&Horizon_Jours', self.f["section"])
-        ws.merge_range(12, 10, 12, 15, "Horizon du graphique :", self.fmt(bold=True, font_color="white", bg_color=BLEU_NUIT,
-                                                                           align="right", valign="vcenter"))
-        ws.set_row(12, 20)
+        ws.merge_range(12, 10, 12, 11, "Horizon :", self.fmt(bold=True, font_color="white", bg_color=BLEU_NUIT,
+                                                             align="right", valign="vcenter"))
+        ws.write_blank(12, 12, None, self.f["section"])
+        ws.write_blank(12, 13, None, self.f["section"])
+        ws.write_blank(12, 14, None, self.f["section"])
+        ws.write_number(12, 15, 30, self.fmt(locked=False, bold=True, align="center", valign="vcenter", font_color=BLEU_NUIT,
+                                             bg_color=JAUNE_SAISIE, num_format='0" j"'))
+        ws.data_validation(12, 15, 12, 15, {"validate": "list", "source": "=L_Horizon"})
+        self.nom("Horizon_Jours", S.F_TDB, 12, 15)
+        ws.set_row(12, 22)
         self.carte(ws, 13, 1, "=B1_Nom", "=SoldePrev_B1", "=DateHorizon", fmt_detail="carte_detail_date", largeur=5)
         self.carte(ws, 13, 6, "=B2_Nom", "=SoldePrev_B2", "=DateHorizon", fmt_detail="carte_detail_date", largeur=5)
         self.carte(ws, 13, 11, "TRÉSORERIE GLOBALE PRÉVUE", "=SoldePrev_Total", "=DateHorizon",
                    fmt_detail="carte_detail_date", largeur=5)
-        self.bouton(ws, "L13", "30 j", "Horizon30", 50, 20, BLEU, dx=-260, dy=-24)
-        self.bouton(ws, "L13", "60 j", "Horizon60", 50, 20, BLEU, dx=-205, dy=-24)
-        self.bouton(ws, "L13", "90 j", "Horizon90", 50, 20, BLEU, dx=-150, dy=-24)
+        self.bouton(ws, "M13", "30 j", "Horizon30", 60, 20, BLEU, dx=8, dy=1)
+        self.bouton(ws, "N13", "60 j", "Horizon60", 60, 20, BLEU, dx=8, dy=1)
+        self.bouton(ws, "O13", "90 j", "Horizon90", 60, 20, BLEU, dx=8, dy=1)
 
         ws.merge_range(17, 1, 17, 15, "À SURVEILLER", self.f["section"])
         ws.set_row(17, 20)
@@ -919,27 +933,30 @@ class Generateur:
         col = 1
         titres = ['="Date"', '="Mouvements "&B1_Nom', '="Solde "&B1_Nom', '="Mouvements "&B2_Nom', '="Solde "&B2_Nom',
                   '="Solde global"']
+        f_ent = self.fmt(bold=True, font_color="white", bg_color=BLEU_NUIT, align="center", valign="vcenter",
+                         text_wrap=True, border=1, border_color=BORDURE, font_size=9)
         for (lib, larg), titre in zip(entetes, titres):
-            ws.merge_range(r + 1, col, r + 1, col + larg - 1, "", self.f["tab_entete"])
-            ws.write_formula(r + 1, col, titre, self.f["tab_entete"])
+            ws.merge_range(r + 1, col, r + 1, col + larg - 1, "", f_ent)
+            ws.write_formula(r + 1, col, titre, f_ent)
             col += larg
-        sources = [("E", "tab_date"), ("K", "tab_eur"), ("G", "tab_eur"), ("L", "tab_eur"), ("I", "tab_eur"),
-                   ("J", "tab_eur_gras")]
+        ws.set_row(r + 1, 30)
+        styles = {"date": self.fmt(num_format="ddd dd/mm/yyyy", font_size=9),
+                  "eur": self.fmt(num_format=S.FMT_EUR, font_size=9),
+                  "solde": self.fmt(num_format=S.FMT_EUR, font_size=9, bold=True)}
+        sources = [("E", "date"), ("K", "eur"), ("G", "solde"), ("L", "eur"), ("I", "solde"), ("J", "solde")]
         for k in range(91):
             rr = r + 2 + k
             col = 1
             for src, style in sources:
-                ws.merge_range(rr, col, rr, col + 1, "", self.f[style])
-                ws.write_formula(rr, col, f"=IF({k}>Horizon_Jours,\"\",'{S.F_CALC}'!{src}{2 + k})", self.f[style])
+                ws.merge_range(rr, col, rr, col + 1, "", styles[style])
+                ws.write_formula(rr, col, f"=IF({k}>Horizon_Jours,\"\",'{S.F_CALC}'!{src}{2 + k})", styles[style])
                 col += 2
-        ws.conditional_format(r + 2, 5, r + 92, 12, {"type": "cell", "criteria": "<", "value": 0,
-                                                     "format": self.f["fond_rouge"]})
-        # Horizon (cellule déverrouillée, liste 30/60/90)
-        ws.write(3, 14, "Horizon (j)", self.fmt(font_color=GRIS, font_size=8, align="right"))
-        ws.write_number(3, 15, 30, self.fmt(locked=False, bold=True, align="center", bg_color=JAUNE_SAISIE,
-                                            border=1, border_color=BORDURE))
-        ws.data_validation(3, 15, 3, 15, {"validate": "list", "source": "=L_Horizon"})
-        self.nom("Horizon_Jours", S.F_TDB, 3, 15)
+        premiere, derniere = r + 3, r + 93  # numéros de ligne Excel
+        ws.conditional_format(r + 2, 1, r + 92, 12, {"type": "formula", "criteria": f"=$B{premiere}<>\"\"",
+                                                     "format": self.wb.add_format({"border": 1, "border_color": BORDURE})})
+        for c0 in (5, 9, 11):
+            ws.conditional_format(r + 2, c0, r + 92, c0 + 1, {"type": "cell", "criteria": "<", "value": 0,
+                                                              "format": self.f["fond_rouge"]})
         ws.freeze_panes(6, 0)
 
     def onglet_aide(self):
@@ -995,7 +1012,54 @@ def construire(dossier_sortie: str, ref: date | None = None, nom_fichier: str = 
             shutil.rmtree(p)
     dd.ecrire_releves(dossier_sortie, f1, f2)
     os.makedirs(os.path.join(dossier_sortie, "Sauvegardes"), exist_ok=True)
+    with open(os.path.join(dossier_sortie, "Sauvegardes", "LISEZMOI.txt"), "w", encoding="utf-8-sig") as f:
+        f.write("Copies datées du classeur créées automatiquement avant chaque actualisation.\r\n"
+                "Le nombre de copies conservées se règle dans l'onglet Paramètres.\r\n")
+    ecrire_recette_attendue(dossier_sortie, ref)
     return chemin
+
+
+def resultats_recette(ref: date, dossier_releves: str) -> dict:
+    """Valeurs attendues de la recette Windows (install/Recette.ps1) : même chaîne que
+    modRecette.Recette_Executer, calculée par le moteur de référence à partir des
+    fichiers de relevés réellement livrés."""
+    from reference.formats import vers_parametres_moteur
+    etat = dd.etat_initial(ref)
+    p1 = vers_parametres_moteur(FORMAT_B1, dd.NOM_B1)
+    p2 = vers_parametres_moteur(FORMAT_B2, dd.NOM_B2)
+    f1, f2 = dd.lignes_brutes_depuis_fichiers(dossier_releves, p1, p2)
+    m.importer(etat, m.preparer_import(f1, p1), datetime.now())
+    m.importer(etat, m.preparer_import(f2, p2), datetime.now())
+    m.generer_echeances(etat)
+    m.rechercher(etat)
+    m.valider_certaines(etat)
+    b1, b2 = dd.NOM_B1, dd.NOM_B2
+    r = {
+        "SoldeReel_B1": m.solde_reel(etat, b1), "SoldeReel_B2": m.solde_reel(etat, b2),
+        "SoldeReel_Total": round(m.solde_reel(etat, b1) + m.solde_reel(etat, b2), 2),
+        "Prev_B1_30": m.solde_previsionnel(etat, b1, 30), "Prev_B2_30": m.solde_previsionnel(etat, b2, 30),
+        "Prev_Total_30": round(m.solde_previsionnel(etat, b1, 30) + m.solde_previsionnel(etat, b2, 30), 2),
+        "Prev_B1_90": m.solde_previsionnel(etat, b1, 90), "Prev_B2_90": m.solde_previsionnel(etat, b2, 90),
+        "Prev_Total_90": round(m.solde_previsionnel(etat, b1, 90) + m.solde_previsionnel(etat, b2, 90), 2),
+        "Depenses_A_Venir": m.total_a_venir(etat, m.TYPE_DEPENSE, 30),
+        "Recettes_Attendues": m.total_a_venir(etat, m.TYPE_RECETTE, 30),
+        "NbATraiter": len(m.a_traiter(etat)), "NbPropositions": len(etat.propositions),
+        "NbOpsProposees": len({pr.op.id for pr in etat.propositions}),
+        "NbEchues": sum(1 for p in etat.previsions if m.statut_suivi(etat.params, p) == m.PREV_A_CONTROLER),
+        "NbOperations": len(etat.operations),
+        "NbPointees": sum(1 for o in etat.operations if o.statut == m.OB_POINTE),
+        "NbFichiersHistorique": len(etat.historique),
+    }
+    return r
+
+
+def ecrire_recette_attendue(dossier_sortie: str, ref: date) -> None:
+    import json
+    attendu = {"date_reference": ref.isoformat(),
+               "date_reference_serie": (ref - date(1899, 12, 30)).days,
+               "valeurs": resultats_recette(ref, dossier_sortie)}
+    with open(os.path.join(dossier_sortie, "recette_attendue.json"), "w", encoding="utf-8") as f:
+        json.dump(attendu, f, ensure_ascii=False, indent=2)
 
 
 def main():

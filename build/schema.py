@@ -116,8 +116,9 @@ PREVISIONS = Table("tbl_Previsions", F_SAISIE, 10, 1, [
             '=IF(AND([@ID]="",[@Libellé]="",[@Montant]=""),"",IF([@[Date prévue]]="","Date manquante",'
             'IF(AND([@Banque]<>B1_Nom,[@Banque]<>B2_Nom),"Banque inconnue",IF([@Montant]="","Montant manquant",'
             'IF(AND([@Statut]="Pointé",[@[ID opération]]=""),"Pointé sans opération",'
+            'IF(AND([@Statut]<>"Pointé",[@[ID opération]]<>""),"Lien bancaire incohérent",'
             'IF(AND(LEFT([@Type],8)="Virement",[@[Lien virement]]=""),"Virement sans contrepartie",'
-            'IF([@[Date prévue]]<=' + _D0_PREV + ',"Antérieure au solde initial","")))))))'),
+            'IF([@[Date prévue]]<=' + _D0_PREV + ',"Antérieure au solde initial",""))))))))'),
     Colonne("Origine", SYSTEME, FMT_TEXTE, 12),
     Colonne("Réf charge", SYSTEME, FMT_TEXTE, 10),
     Colonne("ID opération", SYSTEME, FMT_TEXTE, 12),

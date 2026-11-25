@@ -12,6 +12,11 @@ Option Compare Binary
 
 Private mProfondeur As Long
 
+' Mode silencieux (recette automatique) : les messages sont journalisés au lieu d'être affichés
+Public gSilencieux As Boolean
+Public gJournal As String
+Public gDerniereErreur As String
+
 '-------------------------------------------------------------------------------
 ' Accès aux objets
 '-------------------------------------------------------------------------------
@@ -484,9 +489,25 @@ Public Sub AfficherStatut(ByVal message As String)
     DoEvents
 End Sub
 
+' Remplace MsgBox : en mode silencieux, le message est journalisé et la réponse par défaut
+' (Oui / OK) est renvoyée.
+Public Function Afficher(ByVal message As String, Optional ByVal boutons As VbMsgBoxStyle = vbInformation, _
+                         Optional ByVal titre As String = "Trésorerie") As VbMsgBoxResult
+    If gSilencieux Then
+        gJournal = gJournal & "[" & titre & "] " & message & vbCrLf
+        Select Case boutons And 7
+            Case vbYesNoCancel, vbYesNo: Afficher = vbYes
+            Case Else: Afficher = vbOK
+        End Select
+    Else
+        Afficher = MsgBox(message, boutons, titre)
+    End If
+End Function
+
 Public Sub AfficherErreur(ByVal contexte As String, ByVal description As String)
     If description = "" Then description = "Erreur inconnue."
-    MsgBox "Une erreur est survenue pendant : " & contexte & vbCrLf & vbCrLf & description & vbCrLf & vbCrLf & _
+    gDerniereErreur = contexte & " : " & description
+    Afficher "Une erreur est survenue pendant : " & contexte & vbCrLf & vbCrLf & description & vbCrLf & vbCrLf & _
         "Les données déjà enregistrées n'ont pas été supprimées." & vbCrLf & _
         "En cas de doute, une sauvegarde est disponible dans le dossier « Sauvegardes ».", _
         vbExclamation, "Trésorerie - erreur"

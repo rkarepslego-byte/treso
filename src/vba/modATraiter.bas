@@ -175,14 +175,14 @@ Public Sub AppliquerTraitements()
     Dim resultat As String, msgErr As String
     On Error GoTo Erreur
     If ActionsEnAttente() = 0 Then
-        MsgBox "Aucune action n'a été choisie dans la colonne « Action ».", vbInformation, "À traiter"
+        Afficher "Aucune action n'a été choisie dans la colonne « Action ».", vbInformation, "À traiter"
         Exit Sub
     End If
     DebutTraitement "Application des traitements..."
     resultat = AppliquerTraitementsInterne()
     FinTraitement
     Application.Calculate
-    MsgBox resultat, vbInformation, "À traiter"
+    Afficher resultat, vbInformation, "À traiter"
     Exit Sub
 Erreur:
     msgErr = Err.Description

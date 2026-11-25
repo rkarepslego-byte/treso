@@ -2,5 +2,5 @@ __pycache__/
 *.pyc
 .pytest_cache/
 dist/Sauvegardes/*
-!dist/Sauvegardes/.gitkeep
+!dist/Sauvegardes/LISEZMOI.txt
 ~$*

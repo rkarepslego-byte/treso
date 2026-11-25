@@ -23,7 +23,7 @@ Public Sub Actualiser()
     On Error GoTo Erreur
     n = modATraiter.ActionsEnAttente()
     If n > 0 Then
-        rep = MsgBox(n & " traitement(s) choisi(s) dans l'onglet « À traiter » n'ont pas encore été appliqués." & vbCrLf & vbCrLf & _
+        rep = Afficher(n & " traitement(s) choisi(s) dans l'onglet « À traiter » n'ont pas encore été appliqués." & vbCrLf & vbCrLf & _
                      "Oui : les appliquer avant l'actualisation" & vbCrLf & _
                      "Non : les ignorer" & vbCrLf & "Annuler : ne rien faire", vbYesNoCancel + vbQuestion, "Actualisation")
         If rep = vbCancel Then Exit Sub
@@ -67,7 +67,7 @@ Public Sub Actualiser()
     Application.Calculate
     ThisWorkbook.Worksheets(F_TDB).Activate
 
-    MsgBox "Actualisation terminée." & vbCrLf & vbCrLf & rapport & vbCrLf & _
+    Afficher "Actualisation terminée." & vbCrLf & vbCrLf & rapport & vbCrLf & _
            modRapprochement.ResumeRecherche(nbCert, nbIncert, nbAuto, nbATraiter) & vbCrLf & vbCrLf & _
            IIf(resultatTraitements <> "", "Traitements appliqués : " & resultatTraitements & vbCrLf & vbCrLf, "") & _
            "Sauvegarde : " & sauvegarde & vbCrLf & _
