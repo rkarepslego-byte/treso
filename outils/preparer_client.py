@@ -300,7 +300,7 @@ def preparer(bpgo: str, cic: str, ancien: str, onglet: str, annee: int, mois: in
     charges.sort(key=lambda c: c.id)
 
     params = m.Parametres(banques=[m.Banque("B1", "BPGO", s1, depart), m.Banque("B2", "CIC", s2, depart)],
-                          date_ref=ref)
+                          date_ref=ref, auto_valider=True)  # un seul bouton : les correspondances certaines sont validées
     etat = m.Etat(params)
     etat.charges = charges
     etat.societe = societe
@@ -346,6 +346,8 @@ def simuler_premiere_actualisation(etat: m.Etat, bpgo, cic, p1, p2) -> dict:
     auto = m.traitements_automatiques(e)
     certaines = [p for p in e.propositions if p.niveau == m.NIVEAU_CERTAINE]
     return {"import_b1": r1, "import_b2": r2, "auto": auto,
+            "pointees": [(o.date, o.libelle, o.montant, e.prev(o.id_prevision).libelle)
+                         for o in e.operations if o.statut == m.OB_POINTE and o.id_prevision],
             "propositions": [(p.op.date, p.op.libelle, p.op.montant, p.prev.libelle, p.niveau) for p in e.propositions],
             "nb_certaines": len(certaines), "a_traiter": [(o.date, o.banque, o.libelle, o.montant) for o in m.a_traiter(e)],
             "solde_reel": (m.solde_reel(e, "BPGO"), m.solde_reel(e, "CIC")),
@@ -371,7 +373,9 @@ def ecrire_rapport(chemin: str, r: dict, depart: date) -> None:
     out += ["", "Simulation de la première actualisation :",
             f"  BPGO : {_resume_import(c['import_b1'])}", f"  CIC  : {_resume_import(c['import_b2'])}",
             f"  Traitements automatiques : {c['auto']}",
-            f"  Propositions de rapprochement : {len(c['propositions'])} dont {c['nb_certaines']} certaine(s)"]
+            f"  Rapprochées automatiquement (correspondance certaine) : {len(c['pointees'])}"]
+    out += [f"    {d:%d/%m} {mt:>10.2f}  {lib[:45]:<45} <-> {prev[:35]}" for d, lib, mt, prev in c["pointees"]]
+    out += [f"  Propositions à valider : {len(c['propositions'])} dont {c['nb_certaines']} certaine(s)"]
     out += [f"    {d:%d/%m} {mt:>10.2f}  {lib[:45]:<45} <-> {prev[:35]} [{st}]" for d, lib, mt, prev, st in c["propositions"]]
     out += [f"  Opérations à traiter : {len(c['a_traiter'])}"]
     out += [f"    {d:%d/%m} {b:<4} {mt:>10.2f}  {lib[:70]}" for d, b, lib, mt in c["a_traiter"]]

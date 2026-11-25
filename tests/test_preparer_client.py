@@ -93,7 +93,8 @@ def test_preparation_complete(tmp_path):
     c = r["controle"]
     assert sum(v["ajoutees"] for v in c["import_b1"].values()) == 0
     assert sum(v["ajoutees"] for v in c["import_b2"].values()) == 1
-    assert [(p[2], p[3], p[4]) for p in c["propositions"]] == [(-900.00, "RCH", m.NIVEAU_CERTAINE)]
+    # correspondance certaine validée automatiquement (un seul bouton : Actualiser)
+    assert [(p[2], p[3]) for p in c["pointees"]] == [(-900.00, "RCH")] and c["propositions"] == []
     assert abs(c["solde_reel"][1] - 30000.00) < 0.005
 
     assert os.path.isfile(os.path.join(sortie, "Tresorerie.xlsm"))
