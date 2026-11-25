@@ -205,3 +205,19 @@ def test_classeur_demo_livre_sans_erreur(tmp_path):
     v = valeurs_nommees(wb)
     assert approx(v["Prev_Total_90"], m.solde_previsionnel(etat, dd.NOM_B1, 90) + m.solde_previsionnel(etat, dd.NOM_B2, 90))
     assert v["NbATraiter"] == 0
+
+
+def test_classeur_vide_mise_en_service(tmp_path):
+    """État après remise à zéro (mise en service) : aucune opération, prévision ni charge."""
+    if not LO_DISPONIBLE:
+        pytest.skip("LibreOffice indisponible")
+    etat = m.Etat(dd.parametres_demo(REF))
+    etat.date_calcul_fixe = True
+    wb = generer_et_recalculer(etat, str(tmp_path))
+    erreurs = [f"{ws.title}!{c.coordinate}" for ws in wb.worksheets for row in ws.iter_rows() for c in row
+               if isinstance(c.value, str) and (c.value.startswith("#") or c.value.startswith("Err:"))]
+    assert erreurs == []
+    v = valeurs_nommees(wb)
+    total = sum(b.solde_initial for b in etat.params.banques)
+    assert v["SoldeReel_Total"] == total and v["Prev_Total_90"] == total and v["PointBas"] == total
+    assert v["NbATraiter"] == 0 and v["Suivi_NbLignes"] == 0

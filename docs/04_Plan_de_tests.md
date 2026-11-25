@@ -14,7 +14,7 @@ L'outil associe trois technologies qu'aucun environnement hors Windows ne sait e
 | Fichier OpenXML | Parties, relations, types de contenu, connexions et queryTables cohérents | `tests/test_integrite_classeur.py` |
 | **Chaîne complète dans Excel** | **Recette automatique Windows** : Power Query + VBA exécutés dans Excel sur les relevés de démonstration, 18 indicateurs comparés aux valeurs attendues du moteur de référence, contrôle de l'absence de doublon au réimport | `install/Recette.ps1` (à lancer sur le poste) |
 
-Commande (poste de développement) : `python -m pytest tests` → **45 tests réussis** (dont 5 pour l'analyse automatique des exports bancaires).
+Commande (poste de développement) : `python -m pytest tests` → **46 tests réussis** (dont 5 pour l'analyse automatique des exports bancaires et 1 pour le classeur vide de mise en service).
 
 ## 4.2 Scénarios métier (cahier des charges, phase 7)
 

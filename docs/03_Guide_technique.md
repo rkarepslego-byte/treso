@@ -262,6 +262,11 @@ Toute modification de la logique doit être faite à l'identique dans le VBA **e
 ## 3.10 Limites connues
 
 * Windows et Excel bureau uniquement (pas Mac, pas Excel Online).
+* Volumétrie mesurée : avec 3 ans d'activité (6 000 opérations bancaires, 3 000 prévisions), un
+  recalcul complet prend environ 2,5 s dans LibreOffice (Excel, multi-cœur, est en général plus
+  rapide). Les calculs coûteux (rang et solde cumulé de la vue Suivi) ne portent que sur la période
+  filtrée. Au-delà de plusieurs années, archiver : nouveau classeur avec solde initial = solde du
+  dernier relevé.
 * Les tables sont dimensionnées pour quelques dizaines de milliers de lignes ; la vue Suivi affiche
   1 000 lignes (un message invite à réduire la période au-delà). Clé de tri prévue pour < 50 000
   lignes par table.

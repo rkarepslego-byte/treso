@@ -38,7 +38,8 @@ Onglet **Saisie**, formulaire « Nouvelle opération » :
 
 Vous pouvez aussi écrire directement dans les **lignes vides en bas du tableau** (ou y coller
 plusieurs lignes), puis cliquer **Valider les saisies du tableau** : l'outil attribue les
-identifiants et complète les valeurs par défaut.
+identifiants et complète les valeurs par défaut. Le tableau garde toujours 30 lignes vides : pour
+coller davantage de lignes, collez-en 30, validez, puis recommencez.
 
 Autres boutons :
 * **Trier par date** ;
