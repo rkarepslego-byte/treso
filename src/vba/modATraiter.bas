@@ -323,8 +323,7 @@ Public Function AppliquerTraitementsInterne() As String
     EcrireTable loB, dB, nB
     EcrireTable loP, dP, nP
     If nAjoutsC > 0 Then
-        modPrevisions.ReecrireAvecLignesLibres loC, dC, nC, Array(C(cC, "ID"), C(cC, "Libellé"), C(cC, "Montant"), _
-                                               C(cC, "Première échéance")), ajoutsC, nAjoutsC
+        modPrevisions.ReecrireAvecLignesLibres loC, dC, nC, modPrevisions.ColonnesTestCharges(cC), ajoutsC, nAjoutsC
         modPrevisions.GenererEcheancesInterne nbCreees, nbSuppr
     End If
     modRapprochement.RechercherInterne

@@ -109,6 +109,14 @@ Requêtes (sources dans `src/powerquery/`) :
 
 ### Adapter un vrai format d'export (quand les fichiers des banques seront fournis)
 
+0. **Analyse automatique** (poste de développement) :
+   ```
+   python -m outils.analyser_releve chemin\vers\export_banque1.csv --banque "Nom de la banque"
+   ```
+   L'outil détecte l'encodage, le séparateur, la ligne d'en-tête, les colonnes, le format de date et
+   le séparateur décimal, propose les valeurs de `tbl_ParamImport`, relit le fichier avec ces
+   paramètres (même logique que Power Query) et liste les points à vérifier : lignes écartées, montants
+   tous positifs, référence instable (simple numéro de ligne), lignes identiques dans le fichier.
 1. `Admin_AfficherOngletsTechniques`, onglet **Param_Import**, table `tbl_ParamImport` (colonne de la
    banque concernée) :
 
@@ -244,6 +252,7 @@ python -m pytest tests                                    # tests (LibreOffice r
 * `build/datamashup.py` + `build/integration.py` : intègre les requêtes Power Query ([MS-QDEFF]) et
   relie les tables de transit (connexions, queryTables) ;
 * `build/donnees_demo.py` : jeu de données fictif et relevés de démonstration ;
+* `outils/analyser_releve.py` : analyse d'un export bancaire réel et proposition des paramètres d'import ;
 * `reference/moteur.py` : **moteur de référence** Python, miroir exact du VBA / Power Query /
   formules, qui sert de spécification exécutable.
 

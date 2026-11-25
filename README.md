@@ -54,6 +54,7 @@ dist/         classeur livré + relevés de démonstration + valeurs de recette
 src/          sources Power Query (.pq) et VBA (.bas/.cls)
 build/        générateur du classeur (Python)
 reference/    moteur de référence (spécification exécutable de la logique)
+outils/       analyse d'un export bancaire réel -> paramètres d'import proposés
 tests/        tests automatisés (scénarios, formules via LibreOffice, intégrité)
 install/      installation et recette Windows (PowerShell)
 docs/         documentation

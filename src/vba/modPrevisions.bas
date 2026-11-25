@@ -39,12 +39,17 @@ Public Function Empreinte(ByVal d As Double, ByVal banque As String, ByVal libel
     Empreinte = DateISO(d) & "|" & banque & "|" & libelle & "|" & typeOp & "|" & CentsTexte(Abs(montant))
 End Function
 
-Private Function ColonnesTestPrev(cP As Object) As Variant
-    ColonnesTestPrev = Array(C(cP, "ID"), C(cP, "Date prévue"), C(cP, "Libellé"), C(cP, "Montant"), C(cP, "Banque"))
+' Colonnes qui rendent une ligne « non vide » : toutes les colonnes de saisie, pour ne jamais
+' perdre une ligne commencée par l'utilisateur lors de la réécriture du tableau.
+Public Function ColonnesTestPrev(cP As Object) As Variant
+    ColonnesTestPrev = Array(C(cP, "ID"), C(cP, "Date prévue"), C(cP, "Banque"), C(cP, "Libellé"), C(cP, "Catégorie"), _
+                             C(cP, "Type"), C(cP, "Montant"), C(cP, "Commentaire"), C(cP, "Statut"))
 End Function
 
-Private Function ColonnesTestCharges(cC As Object) As Variant
-    ColonnesTestCharges = Array(C(cC, "ID"), C(cC, "Libellé"), C(cC, "Montant"), C(cC, "Première échéance"))
+Public Function ColonnesTestCharges(cC As Object) As Variant
+    ColonnesTestCharges = Array(C(cC, "ID"), C(cC, "Libellé"), C(cC, "Banque"), C(cC, "Catégorie"), C(cC, "Type"), _
+                                C(cC, "Montant"), C(cC, "Première échéance"), C(cC, "Fréquence"), C(cC, "Date de fin"), _
+                                C(cC, "Commentaire"))
 End Function
 
 ' Réécrit une table : lignes non vides (dans l'ordre), puis lignes ajoutées, puis lignes libres

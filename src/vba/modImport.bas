@@ -83,7 +83,7 @@ End Sub
 ' Sauvegarde
 '-------------------------------------------------------------------------------
 Public Function SauvegarderClasseur() As String
-    Dim dossier As String, base As String, ext As String, cible As String, pos As Long
+    Dim dossier As String, base As String, ext As String, cible As String, pos As Long, modeCalcul As Long
     dossier = DossierSauvegardes()
     CreerDossier dossier
     pos = InStrRev(ThisWorkbook.Name, ".")
@@ -95,7 +95,11 @@ Public Function SauvegarderClasseur() As String
         ext = ".xlsm"
     End If
     cible = dossier & "\" & base & "_" & Format$(Now, "yyyymmdd_hhnnss") & ext
+    ' Le mode de calcul est enregistré dans le fichier : la copie doit être en calcul automatique
+    modeCalcul = Application.Calculation
+    If modeCalcul <> xlCalculationAutomatic Then Application.Calculation = xlCalculationAutomatic
     ThisWorkbook.SaveCopyAs cible
+    If modeCalcul <> xlCalculationAutomatic Then Application.Calculation = modeCalcul
     PurgerSauvegardes dossier, base, ext
     SauvegarderClasseur = cible
 End Function
