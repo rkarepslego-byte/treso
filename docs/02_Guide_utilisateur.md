@@ -13,6 +13,7 @@ faire : **saisir** les opérations prévues, **déposer** les relevés bancaires
 | **Saisie** | Saisir les dépenses et recettes prévues (formulaire + tableau) |
 | **Charges fixes** | Loyer, salaires, abonnements... générés automatiquement chaque mois / trimestre / an |
 | **Suivi prévisionnel** | Chronologie des opérations avec le solde après chaque opération, filtrable |
+| **Synthèse mensuelle** | Flux par catégorie et par mois (réel passé, prévu à venir), solde de fin de mois |
 | **Rapprochement** | Correspondances trouvées entre vos prévisions et la banque, à valider |
 | **À traiter** | Opérations bancaires que vous n'aviez pas prévues |
 | **Opérations bancaires** | Toutes les opérations importées des relevés (consultation) |
@@ -145,6 +146,9 @@ Onglet **À traiter** : opérations bancaires sans prévision correspondante. Po
   de trésorerie, opérations en attente, opérations non prévues, prévisions à contrôler.
 * **Graphique** et **soldes jour par jour** sur l'horizon choisi ; tableau de projection
   30 / 60 / 90 jours.
+
+Onglet **Synthèse mensuelle** : 5 mois passés (réel), le mois en cours (réel + prévu) et 6 mois à
+venir (prévu), par catégorie, avec le flux net et le solde de fin de chaque mois ; filtre par banque.
 
 Onglet **Suivi prévisionnel** : filtrer par banque, période et type (tout / prévisions / réel). Les
 lignes en italique bleu sont des prévisions ; les soldes négatifs sont en rouge.

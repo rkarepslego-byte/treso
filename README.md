@@ -32,6 +32,7 @@ bancaire**, rapprochement automatique, soldes réels et prévisionnels jour par 
 * **Tableau de bord** : soldes réels et prévisionnels par banque et consolidés, horizon 30/60/90 jours,
   graphique, soldes jour par jour, point bas, dépenses à venir, recettes attendues, opérations en
   attente, dépenses non prévues.
+* **Synthèse mensuelle** par catégorie (réel passé / prévu à venir, solde de fin de mois).
 * **Saisie** par formulaire ou tableau ; dépenses enregistrées en négatif ; virements internes liés,
   neutres sur la trésorerie globale.
 * **Charges fixes** mensuelles / trimestrielles / semestrielles / annuelles, générées automatiquement,

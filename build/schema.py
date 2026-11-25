@@ -14,6 +14,7 @@ F_TDB = "Tableau de bord"
 F_SAISIE = "Saisie"
 F_CHARGES = "Charges fixes"
 F_SUIVI = "Suivi prévisionnel"
+F_SYNTHESE = "Synthèse mensuelle"
 F_RAPPRO = "Rapprochement"
 F_ATRAITER = "À traiter"
 F_BANQUE = "Opérations bancaires"
@@ -31,6 +32,7 @@ ONGLETS = [
     (F_SAISIE, "shSaisie", True),
     (F_CHARGES, "shCharges", True),
     (F_SUIVI, "shSuivi", True),
+    (F_SYNTHESE, "shSynthese", True),
     (F_RAPPRO, "shRapprochement", True),
     (F_ATRAITER, "shATraiter", True),
     (F_BANQUE, "shBanque", True),
@@ -323,11 +325,11 @@ PARAMETRES = [
     ("Rapprochement", [
         ("Tolerance_Jours", "Tolérance de date (jours)", 7, FMT_ENTIER,
          "Écart maximal entre la date prévue et la date bancaire."),
-        ("Ecart_Certain", "Écart max. pour une correspondance certaine (jours)", 3, FMT_ENTIER,
+        ("Ecart_Certain", "Écart max. pour une correspondance « certaine » (j)", 3, FMT_ENTIER,
          "Une correspondance unique est « certaine » si l'écart est inférieur ou égal..."),
         ("Seuil_Similarite", "... ou si la similarité des libellés atteint", 0.4, FMT_PCT,
          "Sinon elle est « incertaine » et doit être choisie manuellement."),
-        ("Auto_Valider", "Valider automatiquement les correspondances certaines", "Non", None,
+        ("Auto_Valider", "Validation automatique des correspondances certaines", "Non", None,
          "Oui / Non. Les correspondances incertaines ne sont jamais validées automatiquement."),
     ]),
     ("Prévisions", [

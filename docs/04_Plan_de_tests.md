@@ -14,7 +14,7 @@ L'outil associe trois technologies qu'aucun environnement hors Windows ne sait e
 | Fichier OpenXML | Parties, relations, types de contenu, connexions et queryTables cohérents | `tests/test_integrite_classeur.py` |
 | **Chaîne complète dans Excel** | **Recette automatique Windows** : Power Query + VBA exécutés dans Excel sur les relevés de démonstration, 18 indicateurs comparés aux valeurs attendues du moteur de référence, contrôle de l'absence de doublon au réimport | `install/Recette.ps1` (à lancer sur le poste) |
 
-Commande (poste de développement) : `python -m pytest tests` → **46 tests réussis** (dont 5 pour l'analyse automatique des exports bancaires et 1 pour le classeur vide de mise en service).
+Commande (poste de développement) : `python -m pytest tests` → **47 tests réussis** (dont 5 pour l'analyse automatique des exports bancaires, 1 pour le classeur vide de mise en service et 1 pour la synthèse mensuelle).
 
 ## 4.2 Scénarios métier (cahier des charges, phase 7)
 
@@ -50,7 +50,8 @@ d'opérations, est recalculé par LibreOffice puis comparé au moteur de référ
   dépenses non prévues ;
 * colonnes calculées de chaque prévision (montant signé, suivi, montant à venir), lignes libres vides ;
 * **vue chronologique** : lignes, ordre et solde après chaque opération identiques au calcul attendu ;
-* prochaine échéance de chaque charge fixe.
+* prochaine échéance de chaque charge fixe ;
+* synthèse mensuelle : flux par catégorie et par mois, flux net et solde de fin de mois.
 
 ## 4.4 Recette sur le poste Windows du client
 

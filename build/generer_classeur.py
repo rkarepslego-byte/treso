@@ -303,6 +303,7 @@ class Generateur:
         self.onglet_historique()
         self.onglet_calculs()
         self.onglet_suivi()
+        self.onglet_synthese()
         self.onglet_tableau_de_bord()
         self.onglet_aide()
         for nom, _code, visible in S.ONGLETS:
@@ -331,9 +332,9 @@ class Generateur:
     def onglet_parametres(self):
         ws = self.ws[S.F_PARAM]
         self.entete_onglet(ws, "Paramètres", "Cellules jaunes : à renseigner. Les autres cellules sont protégées.")
-        ws.set_column(1, 1, 46)
-        ws.set_column(2, 2, 30)
-        ws.set_column(3, 3, 54)
+        ws.set_column(1, 1, 50)
+        ws.set_column(2, 2, 38)
+        ws.set_column(3, 3, 70)
         ws.set_column(4, 4, 3)
         valeurs = {
             "B1_Nom": self.etat.params.banques[0].nom, "B2_Nom": self.etat.params.banques[1].nom,
@@ -374,7 +375,7 @@ class Generateur:
                 elif fmt == S.FMT_ENTIER:
                     ws.data_validation(ligne, 2, ligne, 2, {"validate": "integer", "criteria": "between",
                                                             "minimum": 0, "maximum": 3650})
-                ws.set_row(ligne, 24)
+                ws.set_row(ligne, 30)
                 ligne += 1
             ligne += 1
         # Catégories et règles
@@ -482,7 +483,7 @@ class Generateur:
         self.bouton(ws, "H8", "Trier par date", "TrierPrevisions", 110, 28, BLEU, dx=10)
         self.bouton(ws, "I8", "Supprimer la ligne sélectionnée", "SupprimerLigne", 200, 28, ROUGE, dx=40)
         self.bouton(ws, "K8", "Annuler le rapprochement", "AnnulerRapprochement", 180, 28, AMBRE, dx=30)
-        self.bouton(ws, "M8", "◄ Tableau de bord", "AllerTableauDeBord", 140, 28, BLEU_NUIT, dx=20)
+        self.bouton(ws, "M8", "◄ Tableau de bord", "AllerTableauDeBord", 160, 28, BLEU_NUIT, dx=20)
         ws.set_row(7, 26)
         t = S.PREVISIONS
         r0, c0, n = self.ecrire_table(ws, t, self.lignes_previsions(), t.lignes_libres)
@@ -498,7 +499,7 @@ class Generateur:
                            "Les échéances sont générées automatiquement à chaque actualisation (horizon : voir Paramètres). "
                            "Modifier une charge ne modifie jamais les échéances passées, pointées ou modifiées à la main.")
         self.bouton(ws, "B5", "Générer les échéances", "GenererEcheances", 180, 28, VERT)
-        self.bouton(ws, "D5", "◄ Tableau de bord", "AllerTableauDeBord", 140, 28, BLEU_NUIT, dx=10)
+        self.bouton(ws, "D5", "◄ Tableau de bord", "AllerTableauDeBord", 160, 28, BLEU_NUIT, dx=10)
         ws.write(4, 6, "Charges fixes mensuelles nettes :", self.f["libelle"])
         ws.write_formula(4, 8, '=SUMIFS(tbl_Charges[Équivalent mensuel],tbl_Charges[Actif],"Oui")',
                          self.fmt(bold=True, num_format=S.FMT_EUR, font_size=12, font_color=BLEU_NUIT))
@@ -521,10 +522,10 @@ class Generateur:
         self.entete_onglet(ws, "Opérations bancaires importées",
                            "Journal des opérations réelles importées des relevés (jamais supprimées). "
                            "Seules les colonnes Catégorie et Commentaire sont modifiables.")
-        self.bouton(ws, "B5", "Afficher les opérations à traiter", "FiltrerOperationsATraiter", 220, 28, AMBRE)
+        self.bouton(ws, "B5", "Afficher les opérations à traiter", "FiltrerOperationsATraiter", 240, 28, AMBRE)
         self.bouton(ws, "D5", "Tout afficher", "AfficherToutesOperations", 110, 28, BLEU, dx=60)
-        self.bouton(ws, "F5", "Annuler le rapprochement / traitement", "AnnulerRapprochement", 250, 28, ROUGE, dx=20)
-        self.bouton(ws, "I5", "◄ Tableau de bord", "AllerTableauDeBord", 140, 28, BLEU_NUIT, dx=40)
+        self.bouton(ws, "F5", "Annuler le rapprochement / traitement", "AnnulerRapprochement", 290, 28, ROUGE, dx=20)
+        self.bouton(ws, "I5", "◄ Tableau de bord", "AllerTableauDeBord", 160, 28, BLEU_NUIT, dx=80)
         ws.set_row(4, 28)
         t = S.BANQUE
         lignes = []
@@ -556,10 +557,10 @@ class Generateur:
                        self.fmt(text_wrap=True, valign="top", font_color=GRIS, font_size=9, bg_color=GRIS_CLAIR))
         ws.set_row(3, 22)
         ws.set_row(4, 22)
-        self.bouton(ws, "B6", "Rechercher les correspondances", "RechercherCorrespondances", 220, 28, BLEU)
-        self.bouton(ws, "D6", "Valider les choix", "ValiderChoix", 140, 28, VERT, dx=70)
+        self.bouton(ws, "B6", "Rechercher les correspondances", "RechercherCorrespondances", 240, 28, BLEU)
+        self.bouton(ws, "D6", "Valider les choix", "ValiderChoix", 140, 28, VERT, dx=80)
         self.bouton(ws, "G6", "Tout valider (certaines)", "ToutValiderCertaines", 180, 28, VERT, dx=0)
-        self.bouton(ws, "I6", "◄ Tableau de bord", "AllerTableauDeBord", 140, 28, BLEU_NUIT, dx=60)
+        self.bouton(ws, "I6", "◄ Tableau de bord", "AllerTableauDeBord", 160, 28, BLEU_NUIT, dx=60)
         ws.set_row(5, 28)
         t = S.PROPOSITIONS
         lignes = []
@@ -591,7 +592,7 @@ class Generateur:
         ws.set_row(4, 22)
         self.bouton(ws, "B6", "Appliquer les traitements", "AppliquerTraitements", 200, 28, VERT)
         self.bouton(ws, "D6", "Actualiser la liste", "ActualiserListe", 150, 28, BLEU, dx=30)
-        self.bouton(ws, "G6", "◄ Tableau de bord", "AllerTableauDeBord", 140, 28, BLEU_NUIT, dx=0)
+        self.bouton(ws, "G6", "◄ Tableau de bord", "AllerTableauDeBord", 160, 28, BLEU_NUIT, dx=0)
         ws.set_row(5, 28)
         t = S.ATRAITER
         lignes = []
@@ -728,11 +729,11 @@ class Generateur:
                                                     "minimum": date(2000, 1, 1), "maximum": date(2100, 12, 31)})
         ws.write(4, 1, "Filtres :", self.f["libelle"])
         self.bouton(ws, "G4", "Réinitialiser les filtres", "ReinitialiserFiltresSuivi", 170, 26, BLEU, dy=4)
-        self.bouton(ws, "I4", "◄ Tableau de bord", "AllerTableauDeBord", 140, 26, BLEU_NUIT, dx=20, dy=4)
+        self.bouton(ws, "I4", "◄ Tableau de bord", "AllerTableauDeBord", 160, 26, BLEU_NUIT, dx=20, dy=4)
         ws.write_formula(5, 2, '=IF(Suivi_NbLignes>' + str(self.NB_LIGNES_SUIVI) + ',"Attention : seules les '
                          + str(self.NB_LIGNES_SUIVI) + ' premières lignes sont affichées (réduisez la période).","")',
                          self.f["rouge"])
-        larg = {1: 6, 2: 12, 3: 16, 4: 40, 5: 18, 6: 14, 7: 18, 8: 16, 9: 10, 10: 11}
+        larg = {1: 6, 2: 12, 3: 16, 4: 40, 5: 18, 6: 14, 7: 18, 8: 21, 9: 10, 10: 11}
         for c, w in larg.items():
             ws.set_column(c, c, w)
         ws.set_column(12, 15, 10, None, {"hidden": True})
@@ -754,13 +755,15 @@ class Generateur:
             ws.write_formula(r, 14, f'=IF(N{L}<>"","",IFERROR(MATCH(M{L},tbl_Previsions[Rang vue],0),""))')
             ws.write_formula(r, 15, f'=IF(N{L}<>"",INDEX(tbl_Banque[Clé tri],N{L}),IF(O{L}<>"",INDEX(tbl_Previsions[Clé tri],O{L}),""))')
 
-            def choix(col_b, col_p):
-                return (f'=IF(N{L}<>"",INDEX(tbl_Banque[{col_b}],N{L}),IF(O{L}<>"",INDEX(tbl_Previsions[{col_p}],O{L}),""))')
+            def choix(col_b, col_p, texte=False):
+                suffixe = '&""' if texte else ""
+                return (f'=IF(N{L}<>"",INDEX(tbl_Banque[{col_b}],N{L}){suffixe},'
+                        f'IF(O{L}<>"",INDEX(tbl_Previsions[{col_p}],O{L}){suffixe},""))')
             ws.write_formula(r, 1, f'=IF(P{L}="","",M{L})', f_txt)
             ws.write_formula(r, 2, choix("Date", "Date prévue"), f_dat)
-            ws.write_formula(r, 3, choix("Banque", "Banque"), f_txt)
-            ws.write_formula(r, 4, choix("Libellé", "Libellé"), f_txt)
-            ws.write_formula(r, 5, choix("Catégorie", "Catégorie"), f_txt)
+            ws.write_formula(r, 3, choix("Banque", "Banque", True), f_txt)
+            ws.write_formula(r, 4, choix("Libellé", "Libellé", True), f_txt)
+            ws.write_formula(r, 5, choix("Catégorie", "Catégorie", True), f_txt)
             ws.write_formula(r, 6, choix("Montant", "Montant à venir"), f_eur)
             ws.write_formula(r, 7, f'=IF(N{L}<>"",IF(INDEX(tbl_Banque[Statut],N{L})="Pointé","Pointé",'
                                    f'IF(INDEX(tbl_Banque[Statut],N{L})="Proposé","Pointé (à valider)",'
@@ -771,7 +774,7 @@ class Generateur:
                                    f'tbl_Banque[Clé tri],"<="&P{L})+SUMIFS(tbl_Previsions[Montant à venir],'
                                    f'tbl_Previsions[Inclus banque],1,tbl_Previsions[Clé tri],"<="&P{L}))', f_solde)
             ws.write_formula(r, 9, f'=IF(N{L}<>"","Banque",IF(O{L}<>"","Prévision",""))', f_txt)
-            ws.write_formula(r, 10, choix("ID", "ID"), f_txt)
+            ws.write_formula(r, 10, choix("ID", "ID", True), f_txt)
         plage = f"B{r0 + 2}:K{r0 + 1 + self.NB_LIGNES_SUIVI}"
         ws.conditional_format(f"I{r0 + 2}:I{r0 + 1 + self.NB_LIGNES_SUIVI}",
                               {"type": "cell", "criteria": "<", "value": 0, "format": self.f["fond_rouge"]})
@@ -779,6 +782,98 @@ class Generateur:
         ws.conditional_format(plage, {"type": "formula", "criteria": f'=$J{r0 + 2}="Prévision"',
                                       "format": self.wb.add_format({"italic": True, "font_color": "#1E40AF"})})
         ws.freeze_panes(r0 + 1, 0)
+
+    # -------------------------------------------------------------------------
+    NB_CATEGORIES_SYNTHESE = 50
+    MOIS_PASSES = 5
+    MOIS_FUTURS = 6
+
+    def onglet_synthese(self):
+        ws = self.ws[S.F_SYNTHESE]
+        self.entete_onglet(ws, "Synthèse mensuelle par catégorie",
+                           "Mois passés : opérations bancaires réelles. Mois en cours et à venir : réel + prévisions "
+                           "restant à réaliser (les prévisions échues sont comptées dans le mois en cours). "
+                           "Les virements internes s'annulent sur « Toutes ».")
+        ws.write(4, 1, "Banque :", self.f["libelle"])
+        ws.write(4, 2, "Toutes", self.f["saisie"])
+        ws.data_validation(4, 2, 4, 2, {"validate": "list", "source": "=L_BanquesSuivi"})
+        self.nom("Synth_Banque", S.F_SYNTHESE, 4, 2)
+        self.bouton(ws, "E5", "◄ Tableau de bord", "AllerTableauDeBord", 160, 26, BLEU_NUIT, dy=-2)
+        nb_mois = self.MOIS_PASSES + 1 + self.MOIS_FUTURS
+        ws.set_column(1, 1, 26)
+        ws.set_column(2, 1 + nb_mois, 12.5)
+        ws.set_column(2 + nb_mois, 2 + nb_mois, 14)
+        r_ent = 6
+        f_ent = self.fmt(bold=True, font_color="white", bg_color=BLEU_NUIT, align="center", valign="vcenter",
+                         num_format="mmm yyyy", border=1, border_color=BORDURE)
+        f_nat = self.fmt(italic=True, font_color=GRIS, align="center", font_size=8)
+        ws.write(r_ent, 1, "Catégorie", f_ent)
+        ws.write(r_ent - 1, 1, "", f_nat)
+        crit_b = 'IF(Synth_Banque="Toutes","*",Synth_Banque)'
+        for k in range(nb_mois):
+            col = 2 + k
+            decalage = k - self.MOIS_PASSES
+            ws.write_formula(r_ent, col, f"=EDATE(DATE(YEAR(Date_Reference),MONTH(Date_Reference),1),{decalage})", f_ent)
+            ws.write(r_ent - 1, col, "Réel" if decalage < 0 else ("Réel + prévu" if decalage == 0 else "Prévu"), f_nat)
+        ws.write(r_ent, 2 + nb_mois, "Total", f_ent)
+        fmt_sans_zero = '#,##0\\ "€";[Red]\\-#,##0\\ "€";""'
+        f_cat = self.fmt(font_size=9)
+        f_val = self.fmt(font_size=9, num_format=fmt_sans_zero)
+        f_tot = self.fmt(border=1, border_color=BORDURE, font_size=9, num_format=S.FMT_EUR0, bold=True, bg_color=GRIS_CLAIR)
+        f_lib_tot = self.fmt(border=1, border_color=BORDURE, font_size=9, bold=True, bg_color=GRIS_CLAIR)
+        f_tot_cat = self.fmt(font_size=9, num_format=fmt_sans_zero, bold=True, bg_color=GRIS_CLAIR)
+        lettre = xl_col_to_name
+
+        def flux(col, crit_cat):
+            m = f"{lettre(col)}${r_ent + 1}"
+            fin = f"EDATE({m},1)"
+            return (f'SUMIFS(tbl_Banque[Montant],tbl_Banque[Banque],{crit_b},tbl_Banque[Inclus],1{crit_cat("tbl_Banque")},'
+                    f'tbl_Banque[Date],">="&{m},tbl_Banque[Date],"<"&{fin})'
+                    f'+SUMIFS(tbl_Previsions[Montant à venir],tbl_Previsions[Banque],{crit_b}{crit_cat("tbl_Previsions")},'
+                    f'tbl_Previsions[Date effective],">="&{m},tbl_Previsions[Date effective],"<"&{fin})')
+
+        # Lignes de synthèse en haut, catégories ensuite
+        r_solde, r_net, r_autres = r_ent + 1, r_ent + 2, r_ent + 3
+        premiere = r_ent + 4
+        derniere = premiere + self.NB_CATEGORIES_SYNTHESE - 1
+        ws.write(r_solde, 1, "Solde de fin de mois", f_lib_tot)
+        ws.write(r_net, 1, "Flux net du mois", f_lib_tot)
+        ws.write(r_autres, 1, "Sans catégorie / autres", f_lib_tot)
+        ouverture = ('IF(Synth_Banque="Toutes",B1_SoldeInit+B2_SoldeInit,IF(Synth_Banque=B1_Nom,B1_SoldeInit,'
+                     'IF(Synth_Banque=B2_Nom,B2_SoldeInit,0)))')
+        for k in range(nb_mois):
+            col = 2 + k
+            c = lettre(col)
+            m = f"{c}${r_ent + 1}"
+            ws.write_formula(r_solde, col,
+                             f'={ouverture}+SUMIFS(tbl_Banque[Montant],tbl_Banque[Banque],{crit_b},tbl_Banque[Inclus],1,'
+                             f'tbl_Banque[Date],"<"&EDATE({m},1))+SUMIFS(tbl_Previsions[Montant à venir],'
+                             f'tbl_Previsions[Banque],{crit_b},tbl_Previsions[Date effective],"<"&EDATE({m},1))', f_tot)
+            ws.write_formula(r_net, col, "=" + flux(col, lambda t: ""), f_tot)
+            ws.write_formula(r_autres, col, f"={c}{r_net + 1}-SUM({c}{premiere + 1}:{c}{derniere + 1})", f_tot)
+        ws.write_blank(r_solde, 2 + nb_mois, None, f_tot)
+        for r in (r_autres, r_net):
+            ws.write_formula(r, 2 + nb_mois, f"=SUM({lettre(2)}{r + 1}:{lettre(1 + nb_mois)}{r + 1})", f_tot)
+        for i in range(self.NB_CATEGORIES_SYNTHESE):
+            r = premiere + i
+            ws.write_formula(r, 1, f'=IFERROR(INDEX(tbl_Categories[Catégorie],{i + 1})&"","")', f_cat)
+            for k in range(nb_mois):
+                col = 2 + k
+                ws.write_formula(r, col, f'=IF($B{r + 1}="","",' + flux(col, lambda t, rr=r: f",{t}[Catégorie],$B{rr + 1}") + ")",
+                                 f_val)
+            ws.write_formula(r, 2 + nb_mois, f'=IF($B{r + 1}="","",SUM({lettre(2)}{r + 1}:{lettre(1 + nb_mois)}{r + 1}))', f_tot_cat)
+        # bordures uniquement sur les catégories renseignées
+        ws.conditional_format(premiere, 1, derniere, 2 + nb_mois,
+                              {"type": "formula", "criteria": f'=$B{premiere + 1}<>""',
+                               "format": self.wb.add_format({"border": 1, "border_color": BORDURE})})
+        plage = f"{lettre(2)}{r_solde + 1}:{lettre(2 + nb_mois)}{derniere + 1}"
+        ws.conditional_format(plage, {"type": "cell", "criteria": "<", "value": 0,
+                                      "format": self.wb.add_format({"font_color": ROUGE})})
+        col_cour = lettre(2 + self.MOIS_PASSES)
+        ws.conditional_format(f"{col_cour}{premiere + 1}:{col_cour}{derniere + 1}",
+                              {"type": "formula", "criteria": f'=$B{premiere + 1}<>""',
+                               "format": self.wb.add_format({"bg_color": "#FFFBEB"})})
+        ws.freeze_panes(r_ent + 1, 2)
 
     # -------------------------------------------------------------------------
     def carte(self, ws, ligne: int, col: int, titre, formule_valeur: str, formule_detail: str | None,
@@ -819,7 +914,8 @@ class Generateur:
         self.bouton(ws, "H5", "Saisir une opération", "AllerSaisie", 150, 34, BLEU, dx=0)
         self.bouton(ws, "J5", "Charges fixes", "AllerCharges", 110, 34, BLEU, dx=20)
         self.bouton(ws, "L5", "Suivi prévisionnel", "AllerSuivi", 140, 34, BLEU, dx=0)
-        self.bouton(ws, "N5", "Aide", "AllerAide", 60, 34, GRIS, dx=40)
+        self.bouton(ws, "N5", "Synthèse", "AllerSynthese", 85, 34, BLEU, dx=20)
+        self.bouton(ws, "P5", "Aide", "AllerAide", 55, 34, GRIS, dx=0)
         ws.set_row(4, 30)
         ws.set_row(5, 10)
 

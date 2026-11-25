@@ -434,7 +434,7 @@ End Function
 ' Protection et encadrement des traitements
 '-------------------------------------------------------------------------------
 Public Function FeuillesProtegees() As Variant
-    FeuillesProtegees = Array(F_TDB, F_SAISIE, F_CHARGES, F_SUIVI, F_RAPPRO, F_ATRAITER, F_BANQUE, F_PARAM, F_AIDE)
+    FeuillesProtegees = Array(F_TDB, F_SAISIE, F_CHARGES, F_SUIVI, F_SYNTHESE, F_RAPPRO, F_ATRAITER, F_BANQUE, F_PARAM, F_AIDE)
 End Function
 
 Public Sub ProtegerFeuille(ws As Worksheet)

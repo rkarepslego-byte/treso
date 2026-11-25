@@ -39,6 +39,7 @@ Principes :
 | Saisie | oui | formulaire (`Form_*`) + `tbl_Previsions` |
 | Charges fixes | oui | `tbl_Charges` |
 | Suivi prévisionnel | oui | vue chronologique (1 000 lignes de formules) + filtres `Suivi_*` |
+| Synthèse mensuelle | oui | flux par catégorie × 12 mois (réel / réel + prévu / prévu), solde de fin de mois, filtre `Synth_Banque` |
 | Rapprochement | oui | `tbl_Propositions` (écrite par le moteur) |
 | À traiter | oui | `tbl_ATraiter` (écrite par le moteur) |
 | Opérations bancaires | oui | `tbl_Banque` (journal permanent) |

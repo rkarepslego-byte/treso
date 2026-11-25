@@ -81,6 +81,10 @@ Public Sub AllerSuivi()
     Aller F_SUIVI
 End Sub
 
+Public Sub AllerSynthese()
+    Aller F_SYNTHESE
+End Sub
+
 Public Sub AllerRapprochement()
     Aller F_RAPPRO
 End Sub

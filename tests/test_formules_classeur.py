@@ -221,3 +221,44 @@ def test_classeur_vide_mise_en_service(tmp_path):
     total = sum(b.solde_initial for b in etat.params.banques)
     assert v["SoldeReel_Total"] == total and v["Prev_Total_90"] == total and v["PointBas"] == total
     assert v["NbATraiter"] == 0 and v["Suivi_NbLignes"] == 0
+
+
+def test_synthese_mensuelle(classeur):
+    etat, wb = classeur
+    ws = wb["Synthèse mensuelle"]
+    mois = []
+    c = 3
+    while ws.cell(7, c).value != "Total":
+        mois.append(ws.cell(7, c).value.date())
+        c += 1
+    assert len(mois) == 12 and mois[5] == date(REF.year, REF.month, 1)
+
+    def fin(d):
+        return m.edate(d, 1)
+
+    def flux(cat, debut):
+        total = 0.0
+        for o in etat.operations:
+            if m.op_incluse(etat.params, o) and (cat is None or o.categorie == cat) and debut <= o.date < fin(debut):
+                total += o.montant
+        for p in etat.previsions:
+            mav = m.montant_a_venir(etat.params, p)
+            if mav and (cat is None or p.categorie == cat) and debut <= max(p.date, REF) < fin(debut):
+                total += mav
+        return total
+
+    lignes = {ws.cell(r, 2).value: r for r in range(8, 70) if ws.cell(r, 2).value}
+    r_solde, r_net = lignes["Solde de fin de mois"], lignes["Flux net du mois"]
+    for cat in ("Salaires", "Loyer", "Ventes / Clients", "Véhicules / Carburant", "Virement interne"):
+        for k, d in enumerate(mois):
+            assert approx(ws.cell(lignes[cat], 3 + k).value or 0, flux(cat, d)), (cat, d)
+    ouverture = sum(b.solde_initial for b in etat.params.banques)
+    for k, d in enumerate(mois):
+        assert approx(ws.cell(r_net, 3 + k).value, flux(None, d)), d
+        attendu = ouverture + sum(o.montant for o in etat.operations if m.op_incluse(etat.params, o) and o.date < fin(d)) \
+            + sum(m.montant_a_venir(etat.params, p) for p in etat.previsions if max(p.date, REF) < fin(d))
+        assert approx(ws.cell(r_solde, 3 + k).value, attendu), d
+    # Le solde de fin du mois courant + flux des mois suivants = solde prévisionnel à la fin de la période
+    assert approx(ws.cell(r_solde, 3 + 5).value,
+                  m.solde_previsionnel(etat, dd.NOM_B1, (fin(mois[5]) - REF).days - 1)
+                  + m.solde_previsionnel(etat, dd.NOM_B2, (fin(mois[5]) - REF).days - 1))
