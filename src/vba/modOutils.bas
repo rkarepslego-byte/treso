@@ -12,6 +12,10 @@ Option Compare Binary
 
 Private mProfondeur As Long
 
+' Cache des noms et dates de solde des banques, valable pendant un traitement
+Private mCacheBanques As Boolean
+Private mNomB1 As String, mNomB2 As String, mDateB1 As Double, mDateB2 As Double
+
 ' Mode silencieux (recette automatique) : les messages sont journalisés au lieu d'être affichés
 Public gSilencieux As Boolean
 Public gJournal As String
@@ -459,6 +463,7 @@ End Sub
 
 Public Sub DebutTraitement(Optional ByVal message As String = "")
     If mProfondeur = 0 Then
+        mCacheBanques = False
         Application.ScreenUpdating = False
         Application.EnableEvents = False
         Application.Calculation = xlCalculationManual
@@ -615,23 +620,35 @@ End Function
 '-------------------------------------------------------------------------------
 ' Banques
 '-------------------------------------------------------------------------------
+Private Sub ChargerBanques()
+    If mCacheBanques And mProfondeur > 0 Then Exit Sub
+    mNomB1 = Texte(ValeurNom("B1_Nom"))
+    mNomB2 = Texte(ValeurNom("B2_Nom"))
+    mDateB1 = DateVal(ValeurNom("B1_DateSolde"))
+    mDateB2 = DateVal(ValeurNom("B2_DateSolde"))
+    mCacheBanques = True
+End Sub
+
 Public Function NomBanque(ByVal code As String) As String
-    NomBanque = Texte(ValeurNom(code & "_Nom"))
+    ChargerBanques
+    If code = "B1" Then NomBanque = mNomB1 Else NomBanque = mNomB2
 End Function
 
 ' Date du solde initial d'une banque désignée par son nom (0 si banque inconnue)
 Public Function DateSoldeBanque(ByVal nom As String) As Double
+    ChargerBanques
     If nom = "" Then
         DateSoldeBanque = 0
-    ElseIf nom = NomBanque("B1") Then
-        DateSoldeBanque = DateVal(ValeurNom("B1_DateSolde"))
-    ElseIf nom = NomBanque("B2") Then
-        DateSoldeBanque = DateVal(ValeurNom("B2_DateSolde"))
+    ElseIf nom = mNomB1 Then
+        DateSoldeBanque = mDateB1
+    ElseIf nom = mNomB2 Then
+        DateSoldeBanque = mDateB2
     Else
         DateSoldeBanque = 0
     End If
 End Function
 
 Public Function BanqueConnue(ByVal nom As String) As Boolean
-    BanqueConnue = (nom <> "" And (nom = NomBanque("B1") Or nom = NomBanque("B2")))
+    ChargerBanques
+    BanqueConnue = (nom <> "" And (nom = mNomB1 Or nom = mNomB2))
 End Function

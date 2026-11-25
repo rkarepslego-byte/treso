@@ -7,12 +7,16 @@
 Option Explicit
 
 Private Sub Workbook_Open()
+    Dim etaitEnregistre As Boolean
     On Error Resume Next
+    etaitEnregistre = Me.Saved
     ' La protection « UserInterfaceOnly » n'est pas enregistrée dans le fichier :
     ' elle doit être réappliquée à chaque ouverture.
     modOutils.ProtegerTout
     modAdmin.AssignerBoutons
     modTableauDeBord.AppliquerHorizon
     Me.Worksheets(F_TDB).Activate
+    ' Ces réglages techniques ne doivent pas provoquer de demande d'enregistrement à la fermeture
+    Me.Saved = etaitEnregistre
     modAdmin.VerifierInstallation
 End Sub

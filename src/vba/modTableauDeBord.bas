@@ -41,8 +41,11 @@ Public Sub AppliquerHorizon()
     n = CLng(Nombre(ValeurNom("Horizon_Jours")))
     If n <> 30 And n <> 60 And n <> 90 Then n = 30
     noms = Array("Calc_SoldeGlobal", "Calc_SoldeB1", "Calc_SoldeB2")
-    ws.Unprotect MOT_DE_PASSE
     Set ch = ws.ChartObjects(1).Chart
+    If ch.SeriesCollection.Count > 0 Then
+        If ch.SeriesCollection(1).Points.Count = n + 1 Then Exit Sub   ' déjà à la bonne taille
+    End If
+    ws.Unprotect MOT_DE_PASSE
     For k = 0 To 2
         If ch.SeriesCollection.Count > k Then
             ch.SeriesCollection(k + 1).Values = ThisWorkbook.Names(CStr(noms(k))).RefersToRange.Resize(n + 1, 1)
